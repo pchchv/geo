@@ -7,6 +7,7 @@ var (
 	_ Geometry = Collection{}
 	_ Geometry = MultiPoint{}
 	_ Geometry = LineString{}
+	_ Geometry = MultiLineString{}
 )
 
 // Geometry represents the shared attributes of a geometry.
@@ -17,11 +18,12 @@ type Geometry interface {
 	private() // requiring because sub package type switch over all possible types
 }
 
-func (p Point) private()       {}
-func (b Bound) private()       {}
-func (c Collection) private()  {}
-func (mp MultiPoint) private() {}
-func (ls LineString) private() {}
+func (p Point) private()             {}
+func (b Bound) private()             {}
+func (c Collection) private()        {}
+func (mp MultiPoint) private()       {}
+func (ls LineString) private()       {}
+func (mls MultiLineString) private() {}
 
 // Collection is a collection of geometries that is also a Geometry.
 type Collection []Geometry
