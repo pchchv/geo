@@ -24,3 +24,18 @@ func (ls LineString) GeoJSONType() string {
 func (ls LineString) Dimensions() int {
 	return 1
 }
+
+// Reverse will reverse the line string.
+// This is done inplace, ie. it modifies the original data.
+func (ls LineString) Reverse() {
+	l := len(ls) - 1
+	for i := 0; i <= l/2; i++ {
+		ls[i], ls[l-i] = ls[l-i], ls[i]
+	}
+}
+
+// Clone returns a new copy of the line string.
+func (ls LineString) Clone() LineString {
+	ps := MultiPoint(ls)
+	return LineString(ps.Clone())
+}
