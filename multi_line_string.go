@@ -42,3 +42,17 @@ func (mls MultiLineString) GeoJSONType() string {
 func (mls MultiLineString) Dimensions() int {
 	return 1
 }
+
+// Clone returns a new deep copy of the multi line string.
+func (mls MultiLineString) Clone() MultiLineString {
+	if mls == nil {
+		return nil
+	}
+
+	nmls := make(MultiLineString, 0, len(mls))
+	for _, ls := range mls {
+		nmls = append(nmls, ls.Clone())
+	}
+
+	return nmls
+}
