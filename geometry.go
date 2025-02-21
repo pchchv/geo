@@ -18,3 +18,6 @@ type Geometry interface {
 func (p Point) private()      {}
 func (b Bound) private()      {}
 func (c Collection) private() {}
+
+// Collection is a collection of geometries that is also a Geometry.
+type Collection []Geometry
