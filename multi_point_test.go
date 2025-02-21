@@ -33,3 +33,16 @@ func TestMultiPointEquals(t *testing.T) {
 		t.Error("should not be equal")
 	}
 }
+
+func TestMultiPointClone(t *testing.T) {
+	p1 := MultiPoint{{0, 0}, {0.5, .2}, {1, 0}}
+	p2 := p1.Clone()
+	p2 = append(p2, Point{0, 0})
+	if len(p1) == len(p2) {
+		t.Errorf("clone length %d == %d", len(p1), len(p2))
+	}
+
+	if p2.Equal(p1) {
+		t.Error("clone should be equal")
+	}
+}
