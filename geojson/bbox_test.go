@@ -3,7 +3,7 @@ package geojson
 import (
 	"testing"
 
-	"github.com/pchchv/osm/helpers/geo"
+	"github.com/pchchv/geo"
 )
 
 func TestBBoxValid(t *testing.T) {

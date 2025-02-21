@@ -1,6 +1,6 @@
 package geojson
 
-import "github.com/pchchv/osm/helpers/geo"
+import "github.com/pchchv/geo"
 
 // BBox is for the geojson bbox attribute which is an
 // array with all axes of the most southwesterly point
