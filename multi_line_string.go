@@ -32,3 +32,13 @@ func (mls MultiLineString) Equal(multiLineString MultiLineString) bool {
 
 	return true
 }
+
+// GeoJSONType returns the GeoJSON type for the object.
+func (mls MultiLineString) GeoJSONType() string {
+	return "MultiLineString"
+}
+
+// Dimensions returns 1 because a MultiLineString is a 2d object.
+func (mls MultiLineString) Dimensions() int {
+	return 1
+}
