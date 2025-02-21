@@ -71,3 +71,37 @@ func TestMultiLineString_Equal(t *testing.T) {
 		})
 	}
 }
+
+func TestMultiLineString_Clone(t *testing.T) {
+	cases := []struct {
+		name     string
+		mls      MultiLineString
+		expected MultiLineString
+	}{
+		{
+			name: "normal multi line string",
+			mls: MultiLineString{
+				{{0, 0}, {0, 2}, {2, 2}, {2, 0}, {0, 0}},
+				{{1, 1}, {1, 3}, {3, 3}, {3, 1}, {1, 1}},
+			},
+			expected: MultiLineString{
+				{{0, 0}, {0, 2}, {2, 2}, {2, 0}, {0, 0}},
+				{{1, 1}, {1, 3}, {3, 3}, {3, 1}, {1, 1}},
+			},
+		},
+		{
+			name:     "nil should return nil",
+			mls:      nil,
+			expected: nil,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			c := tc.mls.Clone()
+			if !c.Equal(tc.expected) {
+				t.Errorf("not cloned correctly: %v", c)
+			}
+		})
+	}
+}
