@@ -5,6 +5,7 @@ var (
 	_ Geometry = Point{}
 	_ Geometry = Bound{}
 	_ Geometry = Collection{}
+	_ Geometry = MultiPoint{}
 )
 
 // Geometry represents the shared attributes of a geometry.
@@ -15,9 +16,10 @@ type Geometry interface {
 	private() // requiring because sub package type switch over all possible types
 }
 
-func (p Point) private()      {}
-func (b Bound) private()      {}
-func (c Collection) private() {}
+func (p Point) private()       {}
+func (b Bound) private()       {}
+func (c Collection) private()  {}
+func (mp MultiPoint) private() {}
 
 // Collection is a collection of geometries that is also a Geometry.
 type Collection []Geometry
