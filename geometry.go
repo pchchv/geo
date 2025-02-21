@@ -64,3 +64,8 @@ func (c Collection) Dimensions() (max int) {
 
 	return
 }
+
+// GeoJSONType returns the geometry collection type.
+func (c Collection) GeoJSONType() string {
+	return "GeometryCollection"
+}
