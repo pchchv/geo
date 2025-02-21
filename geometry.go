@@ -2,6 +2,7 @@ package geo
 
 // compile time checks
 var (
+	_ Geometry = Ring{}
 	_ Geometry = Point{}
 	_ Geometry = Bound{}
 	_ Geometry = Collection{}
@@ -18,6 +19,7 @@ type Geometry interface {
 	private() // requiring because sub package type switch over all possible types
 }
 
+func (r Ring) private()              {}
 func (p Point) private()             {}
 func (b Bound) private()             {}
 func (c Collection) private()        {}
