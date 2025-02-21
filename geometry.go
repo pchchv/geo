@@ -5,6 +5,7 @@ var (
 	_ Geometry = Ring{}
 	_ Geometry = Point{}
 	_ Geometry = Bound{}
+	_ Geometry = Polygon{}
 	_ Geometry = Collection{}
 	_ Geometry = MultiPoint{}
 	_ Geometry = LineString{}
@@ -22,6 +23,7 @@ type Geometry interface {
 func (r Ring) private()              {}
 func (p Point) private()             {}
 func (b Bound) private()             {}
+func (p Polygon) private()           {}
 func (c Collection) private()        {}
 func (mp MultiPoint) private()       {}
 func (ls LineString) private()       {}
