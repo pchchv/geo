@@ -6,6 +6,7 @@ var (
 	_ Geometry = Bound{}
 	_ Geometry = Collection{}
 	_ Geometry = MultiPoint{}
+	_ Geometry = LineString{}
 )
 
 // Geometry represents the shared attributes of a geometry.
@@ -20,6 +21,7 @@ func (p Point) private()       {}
 func (b Bound) private()       {}
 func (c Collection) private()  {}
 func (mp MultiPoint) private() {}
+func (ls LineString) private() {}
 
 // Collection is a collection of geometries that is also a Geometry.
 type Collection []Geometry
