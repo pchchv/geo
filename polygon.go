@@ -30,3 +30,13 @@ func (p Polygon) Equal(polygon Polygon) bool {
 
 	return true
 }
+
+// Dimensions returns 2 because a Polygon is a 2d object.
+func (p Polygon) Dimensions() int {
+	return 2
+}
+
+// GeoJSONType returns the GeoJSON type for the object.
+func (p Polygon) GeoJSONType() string {
+	return "Polygon"
+}
