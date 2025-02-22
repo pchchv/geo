@@ -14,3 +14,13 @@ func (r Ring) Bound() Bound {
 func (r Ring) Equal(ring Ring) bool {
 	return MultiPoint(r).Equal(MultiPoint(ring))
 }
+
+// Dimensions returns 2 because a Ring is a 2d object.
+func (r Ring) Dimensions() int {
+	return 2
+}
+
+// GeoJSONType returns the GeoJSON type for the object.
+func (r Ring) GeoJSONType() string {
+	return "Polygon"
+}
