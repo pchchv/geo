@@ -70,3 +70,37 @@ func TestMultiPolygon_Equal(t *testing.T) {
 		})
 	}
 }
+
+func TestMultiPolygon_Clone(t *testing.T) {
+	cases := []struct {
+		name     string
+		mp       MultiPolygon
+		expected MultiPolygon
+	}{
+		{
+			name: "normal multipolygon",
+			mp: MultiPolygon{
+				{{{0, 0}, {0, 2}, {2, 2}, {2, 0}, {0, 0}}},
+				{{{1, 1}, {1, 3}, {3, 3}, {3, 1}, {1, 1}}},
+			},
+			expected: MultiPolygon{
+				{{{0, 0}, {0, 2}, {2, 2}, {2, 0}, {0, 0}}},
+				{{{1, 1}, {1, 3}, {3, 3}, {3, 1}, {1, 1}}},
+			},
+		},
+		{
+			name:     "nil should return nil",
+			mp:       nil,
+			expected: nil,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			c := tc.mp.Clone()
+			if !c.Equal(tc.expected) {
+				t.Errorf("not cloned correctly: %v", c)
+			}
+		})
+	}
+}
