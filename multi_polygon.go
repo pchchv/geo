@@ -31,3 +31,13 @@ func (mp MultiPolygon) Equal(multiPolygon MultiPolygon) bool {
 
 	return true
 }
+
+// GeoJSONType returns the GeoJSON type for the object.
+func (mp MultiPolygon) GeoJSONType() string {
+	return "MultiPolygon"
+}
+
+// Dimensions returns 2 because a MultiPolygon is a 2d object.
+func (mp MultiPolygon) Dimensions() int {
+	return 2
+}
