@@ -50,3 +50,26 @@ func (r Ring) Orientation() Orientation {
 	// degenerate case, no area
 	return 0
 }
+
+// Reverse changes the direction of the ring.
+// This is done inplace, ie. it modifies the original data.
+func (r Ring) Reverse() {
+	LineString(r).Reverse()
+}
+
+// Closed will return true if the ring is a real ring.
+// ie. 4+ points and the first and last points match.
+// NOTE: this will not check for self-intersection.
+func (r Ring) Closed() bool {
+	return (len(r) >= 4) && (r[0] == r[len(r)-1])
+}
+
+// Clone returns a new copy of the ring.
+func (r Ring) Clone() Ring {
+	if r == nil {
+		return nil
+	}
+
+	ps := MultiPoint(r)
+	return Ring(ps.Clone())
+}
