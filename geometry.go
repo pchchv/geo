@@ -9,6 +9,7 @@ var (
 	_ Geometry = Collection{}
 	_ Geometry = MultiPoint{}
 	_ Geometry = LineString{}
+	_ Geometry = MultiPolygon{}
 	_ Geometry = MultiLineString{}
 )
 
@@ -27,6 +28,7 @@ func (p Polygon) private()           {}
 func (c Collection) private()        {}
 func (mp MultiPoint) private()       {}
 func (ls LineString) private()       {}
+func (mp MultiPolygon) private()     {}
 func (mls MultiLineString) private() {}
 
 // Collection is a collection of geometries that is also a Geometry.
