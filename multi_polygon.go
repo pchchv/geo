@@ -41,3 +41,17 @@ func (mp MultiPolygon) GeoJSONType() string {
 func (mp MultiPolygon) Dimensions() int {
 	return 2
 }
+
+// Clone returns a new deep copy of the multi-polygon.
+func (mp MultiPolygon) Clone() MultiPolygon {
+	if mp == nil {
+		return nil
+	}
+
+	nmp := make(MultiPolygon, 0, len(mp))
+	for _, p := range mp {
+		nmp = append(nmp, p.Clone())
+	}
+
+	return nmp
+}
