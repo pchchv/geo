@@ -1,7 +1,7 @@
 package geo
 
-// compile time checks
 var (
+	// compile time checks
 	_ Geometry = Ring{}
 	_ Geometry = Point{}
 	_ Geometry = Bound{}
@@ -11,6 +11,30 @@ var (
 	_ Geometry = LineString{}
 	_ Geometry = MultiPolygon{}
 	_ Geometry = MultiLineString{}
+	// AllGeometries lists all possible types and
+	// values that a geometry interface can be.
+	// It should be used only for testing to
+	// verify functions that accept a Geometry will work in all cases.
+	AllGeometries = []Geometry{
+		nil,
+		Point{},
+		MultiPoint{},
+		LineString{},
+		MultiLineString{},
+		Ring{},
+		Polygon{},
+		MultiPolygon{},
+		Bound{},
+		Collection{},
+		MultiPoint(nil),
+		LineString(nil),
+		MultiLineString(nil),
+		Ring(nil),
+		Polygon(nil),
+		MultiPolygon(nil),
+		Collection(nil),
+		Collection{Collection{Point{}}},
+	}
 )
 
 // Geometry represents the shared attributes of a geometry.
