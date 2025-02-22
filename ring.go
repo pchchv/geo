@@ -24,3 +24,29 @@ func (r Ring) Dimensions() int {
 func (r Ring) GeoJSONType() string {
 	return "Polygon"
 }
+
+// Orientation returns 1 if the the ring is in couter-clockwise order,
+// return -1 if the ring is the clockwise order and
+// 0 if the ring is degenerate and had no area.
+func (r Ring) Orientation() Orientation {
+	// this is a fast planar area computation,
+	// which is okay for this use
+	// implicitly move everything to near the
+	// origin to help with roundoff
+	var area float64
+	offsetX := r[0][0]
+	offsetY := r[0][1]
+	for i := 1; i < len(r)-1; i++ {
+		area += (r[i][0]-offsetX)*(r[i+1][1]-offsetY) -
+			(r[i+1][0]-offsetX)*(r[i][1]-offsetY)
+	}
+
+	if area > 0 {
+		return CCW
+	} else if area < 0 {
+		return CW
+	}
+
+	// degenerate case, no area
+	return 0
+}
