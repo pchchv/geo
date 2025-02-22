@@ -36,3 +36,50 @@ func TestRing_Orientation(t *testing.T) {
 		})
 	}
 }
+
+func TestRing_Closed(t *testing.T) {
+	cases := []struct {
+		name   string
+		ring   Ring
+		closed bool
+	}{
+		{
+			name:   "first must equal last",
+			ring:   Ring{{0, 0}, {3, 0}, {3, 4}, {0, 0}},
+			closed: true,
+		},
+		{
+			name:   "not closed if last point does not match",
+			ring:   Ring{{0, 0}, {3, 0}, {3, 3}, {3, 4}},
+			closed: false,
+		},
+		{
+			name:   "empty ring",
+			ring:   Ring{},
+			closed: false,
+		},
+		{
+			name:   "one vertex ring",
+			ring:   Ring{{3, 0}},
+			closed: false,
+		},
+		{
+			name:   "two vertex ring",
+			ring:   Ring{{3, 0}, {3, 0}},
+			closed: false,
+		},
+		{
+			name:   "three vertex ring",
+			ring:   Ring{{3, 0}, {0, 0}, {3, 0}},
+			closed: false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if v := tc.ring.Closed(); v != tc.closed {
+				t.Errorf("incorrect: %v != %v", v, tc.closed)
+			}
+		})
+	}
+}
