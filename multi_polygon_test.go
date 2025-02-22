@@ -13,3 +13,60 @@ func TestMultiPolygon_Bound(t *testing.T) {
 		t.Errorf("incorrect bound: %v", b)
 	}
 }
+
+func TestMultiPolygon_Equal(t *testing.T) {
+	cases := []struct {
+		name     string
+		mp1      MultiPolygon
+		mp2      MultiPolygon
+		expected bool
+	}{
+		{
+			name: "same multipolygon",
+			mp1: MultiPolygon{
+				{{{0, 0}, {0, 2}, {2, 2}, {2, 0}, {0, 0}}},
+				{{{1, 1}, {1, 3}, {3, 3}, {3, 1}, {1, 1}}},
+			},
+			mp2: MultiPolygon{
+				{{{0, 0}, {0, 2}, {2, 2}, {2, 0}, {0, 0}}},
+				{{{1, 1}, {1, 3}, {3, 3}, {3, 1}, {1, 1}}},
+			},
+			expected: true,
+		},
+		{
+			name: "different number or rings",
+			mp1: MultiPolygon{
+				{{{0, 0}, {0, 2}, {2, 2}, {2, 0}, {0, 0}}},
+				{{{1, 1}, {1, 3}, {3, 3}, {3, 1}, {1, 1}}},
+			},
+			mp2: MultiPolygon{
+				{{{0, 0}, {0, 2}, {2, 2}, {2, 0}, {0, 0}}},
+			},
+			expected: false,
+		},
+		{
+			name: "inner rings are different",
+			mp1: MultiPolygon{
+				{{{0, 0}, {0, 2}, {2, 2}, {2, 0}, {0, 0}}},
+				{{{1, 1}, {1, 3}, {3, 3}, {3, 1}, {1, 1}}},
+			},
+			mp2: MultiPolygon{
+				{{{0, 0}, {0, 2}, {2, 2}, {2, 0}, {0, 0}}},
+				{{{1, 1}, {1, 2}, {2, 2}, {2, 1}, {1, 1}}},
+			},
+			expected: false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if v := tc.mp1.Equal(tc.mp2); v != tc.expected {
+				t.Errorf("mp1 != mp2: %v != %v", v, tc.expected)
+			}
+
+			if v := tc.mp2.Equal(tc.mp1); v != tc.expected {
+				t.Errorf("mp2 != mp1: %v != %v", v, tc.expected)
+			}
+		})
+	}
+}
