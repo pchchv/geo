@@ -52,7 +52,8 @@ func (r Ring) Orientation() Orientation {
 }
 
 // Reverse changes the direction of the ring.
-// This is done inplace, ie. it modifies the original data.
+// This is done inplace,
+// ie. it modifies the original data.
 func (r Ring) Reverse() {
 	LineString(r).Reverse()
 }
