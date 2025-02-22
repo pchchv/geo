@@ -105,3 +105,20 @@ func (c Collection) Dimensions() (max int) {
 func (c Collection) GeoJSONType() string {
 	return "GeometryCollection"
 }
+
+// Equal compares two collections.
+// Returns true if lengths are the same and all the
+// sub geometries are the same and in the same order.
+func (c Collection) Equal(collection Collection) bool {
+	if len(c) != len(collection) {
+		return false
+	}
+
+	for i, g := range c {
+		if !Equal(g, collection[i]) {
+			return false
+		}
+	}
+
+	return true
+}
