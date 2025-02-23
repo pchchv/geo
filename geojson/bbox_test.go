@@ -1,6 +1,7 @@
 package geojson
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/pchchv/geo"
@@ -77,5 +78,15 @@ func TestBBoxBound(t *testing.T) {
 				t.Errorf("incorrect result: %v != %v", v, tc.result)
 			}
 		})
+	}
+}
+
+func TestBBox(t *testing.T) {
+	ls := geo.LineString{{1, 3}, {0, 4}}
+	b := ls.Bound()
+	bbox := NewBBox(b)
+	expected := BBox{0, 3, 1, 4}
+	if !reflect.DeepEqual(bbox, expected) {
+		t.Errorf("incorrect result: %v != %v", bbox, expected)
 	}
 }
