@@ -233,3 +233,10 @@ func TestBoundToRing(t *testing.T) {
 		t.Errorf("orientation should be ccw")
 	}
 }
+
+func TestBoundToPolygon(t *testing.T) {
+	bound := Bound{Min: Point{1, 1}, Max: Point{2, 2}}
+	if bound.ToPolygon()[0].Orientation() != CCW {
+		t.Errorf("orientation should be ccw")
+	}
+}
