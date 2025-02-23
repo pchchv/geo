@@ -149,3 +149,15 @@ func (b Bound) IsEmpty() bool {
 func (b Bound) IsZero() bool {
 	return b.Max == Point{} && b.Min == Point{}
 }
+
+// ToRing converts the bound into a
+// loop defined by the boundary of the box.
+func (b Bound) ToRing() Ring {
+	return Ring{
+		b.Min,
+		Point{b.Max[0], b.Min[1]},
+		b.Max,
+		Point{b.Min[0], b.Max[1]},
+		b.Min,
+	}
+}
