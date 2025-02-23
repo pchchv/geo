@@ -161,3 +161,8 @@ func (b Bound) ToRing() Ring {
 		b.Min,
 	}
 }
+
+// ToPolygon converts the bound into a Polygon object.
+func (b Bound) ToPolygon() Polygon {
+	return Polygon{b.ToRing()}
+}
