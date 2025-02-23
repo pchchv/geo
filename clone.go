@@ -49,5 +49,4 @@ func Clone(g Geometry) Geometry {
 	default:
 		panic(fmt.Sprintf("geometry type not supported: %T", g))
 	}
-
 }
