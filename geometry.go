@@ -122,3 +122,17 @@ func (c Collection) Equal(collection Collection) bool {
 
 	return true
 }
+
+// Clone returns a deep copy of the collection.
+func (c Collection) Clone() Collection {
+	if c == nil {
+		return nil
+	}
+
+	nc := make(Collection, len(c))
+	for i, g := range c {
+		nc[i] = Clone(g)
+	}
+
+	return nc
+}
