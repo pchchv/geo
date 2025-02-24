@@ -3,6 +3,7 @@ package geojson
 import (
 	"bytes"
 	"encoding/json"
+	"reflect"
 	"testing"
 
 	"github.com/pchchv/geo"
@@ -20,7 +21,7 @@ func TestNewFeature(t *testing.T) {
 func TestFeatureMarshalJSON(t *testing.T) {
 	f := NewFeature(geo.Point{1, 2})
 	if blob, err := f.MarshalJSON(); err != nil {
-		t.Fatalf("error marshalling to json: %v", err)
+		t.Fatalf("error marshalling to json: %e", err)
 	} else if !bytes.Contains(blob, []byte(`"properties":null`)) {
 		t.Errorf("json should set properties to null if there are none")
 	}
@@ -30,14 +31,14 @@ func TestFeatureMarshalJSON_BBox(t *testing.T) {
 	f := NewFeature(geo.Bound{Min: geo.Point{1, 1}, Max: geo.Point{2, 2}})
 	f.BBox = nil
 	if blob, err := f.MarshalJSON(); err != nil {
-		t.Fatalf("error marshalling to json: %v", err)
+		t.Fatalf("error marshalling to json: %e", err)
 	} else if bytes.Contains(blob, []byte(`"bbox"`)) {
 		t.Errorf("should not set the bbox value")
 	}
 
 	f.BBox = []float64{1, 2, 3, 4}
 	if blob, err := f.MarshalJSON(); err != nil {
-		t.Fatalf("error marshalling to json: %v", err)
+		t.Fatalf("error marshalling to json: %e", err)
 	} else if !bytes.Contains(blob, []byte(`"bbox":[1,2,3,4]`)) {
 		t.Errorf("should set type to polygon coords: %v", string(blob))
 	}
@@ -46,7 +47,7 @@ func TestFeatureMarshalJSON_BBox(t *testing.T) {
 func TestFeatureMarshalJSON_Bound(t *testing.T) {
 	f := NewFeature(geo.Bound{Min: geo.Point{1, 1}, Max: geo.Point{2, 2}})
 	if blob, err := f.MarshalJSON(); err != nil {
-		t.Fatalf("error marshalling to json: %v", err)
+		t.Fatalf("error marshalling to json: %e", err)
 	} else if !bytes.Contains(blob, []byte(`"type":"Polygon"`)) {
 		t.Errorf("should set type to polygon")
 	} else if !bytes.Contains(blob, []byte(`"coordinates":[[[1,1],[2,1],[2,2],[1,2],[1,1]]]`)) {
@@ -57,13 +58,13 @@ func TestFeatureMarshalJSON_Bound(t *testing.T) {
 func TestFeature_marshalValue(t *testing.T) {
 	f := NewFeature(geo.Point{1, 2})
 	if blob, err := json.Marshal(*f); err != nil {
-		t.Fatalf("should marshal to json just fine but got %v", err)
+		t.Fatalf("should marshal to json just fine but got %e", err)
 	} else if !bytes.Contains(blob, []byte(`"properties":null`)) {
 		t.Errorf("json should set properties to null if there are none")
 	}
 
 	if blob, err := bson.Marshal(*f); err != nil {
-		t.Fatalf("should marshal to bson just fine but got %v", err)
+		t.Fatalf("should marshal to bson just fine but got %e", err)
 	} else if !bytes.Contains(blob, append([]byte{byte(bsontype.Null)}, []byte("properties")...)) {
 		t.Errorf("json should set properties to null if there are none")
 	}
@@ -72,7 +73,7 @@ func TestFeature_marshalValue(t *testing.T) {
 func TestFeatureMarshal(t *testing.T) {
 	f := NewFeature(geo.Point{1, 2})
 	if blob, err := json.Marshal(f); err != nil {
-		t.Fatalf("should marshal to json just fine but got %v", err)
+		t.Fatalf("should marshal to json just fine but got %e", err)
 	} else if !bytes.Contains(blob, []byte(`"properties":null`)) {
 		t.Errorf("json should set properties to null if there are none")
 	} else if !bytes.Contains(blob, []byte(`"type":"Feature"`)) {
@@ -88,7 +89,7 @@ func TestUnmarshalFeature_GeometryCollection(t *testing.T) {
 
 	f, err := UnmarshalFeature([]byte(rawJSON))
 	if err != nil {
-		t.Fatalf("unmarshal error: %v", err)
+		t.Fatalf("unmarshal error: %e", err)
 	}
 
 	wantType := geo.Collection{}.GeoJSONType()
@@ -97,3 +98,77 @@ func TestUnmarshalFeature_GeometryCollection(t *testing.T) {
 	}
 }
 
+func TestUnmarshalFeature_missingGeometry(t *testing.T) {
+	t.Run("empty geometry", func(t *testing.T) {
+		rawJSON := `{ "type": "Feature", "geometry": {} }`
+		if _, err := UnmarshalFeature([]byte(rawJSON)); err != ErrInvalidGeometry {
+			t.Fatalf("incorrect unmarshal error: %e", err)
+		}
+	})
+
+	t.Run("missing geometry", func(t *testing.T) {
+		rawJSON := `{ "type": "Feature" }`
+		if f, err := UnmarshalFeature([]byte(rawJSON)); err != nil {
+			t.Fatalf("should not error: %e", err)
+		} else if f == nil {
+			t.Fatalf("feature should not be nil")
+		}
+	})
+}
+
+func TestFeatureMarshalJSON_null(t *testing.T) {
+	t.Run("pointer", func(t *testing.T) {
+		type S struct {
+			GeoJSON *Feature `json:"geojson"`
+		}
+
+		var s S
+		if err := json.Unmarshal([]byte(`{"geojson": null}`), &s); err != nil {
+			t.Fatalf("unmarshal error: %e", err)
+		}
+
+		if s.GeoJSON != nil {
+			t.Errorf("should be nil, got: %v", s)
+		}
+	})
+
+	t.Run("non-pointer", func(t *testing.T) {
+		type S struct {
+			GeoJSON Feature `json:"geojson"`
+		}
+
+		var s S
+		if err := json.Unmarshal([]byte(`{"geojson": null}`), &s); err != nil {
+			t.Fatalf("unmarshal error: %e", err)
+		}
+
+		if !reflect.DeepEqual(s.GeoJSON, Feature{}) {
+			t.Errorf("should be empty, got: %v", s)
+		}
+	})
+}
+
+func TestUnmarshalBSON_missingGeometry(t *testing.T) {
+	t.Run("missing geometry", func(t *testing.T) {
+		f := NewFeature(nil)
+		f.Geometry = nil
+
+		data, err := bson.Marshal(f)
+		if err != nil {
+			t.Fatalf("marshal error: %e", err)
+		}
+
+		nf := &Feature{}
+		if err = bson.Unmarshal(data, &nf); err != nil {
+			t.Fatalf("unmarshal error: %e", err)
+		}
+
+		if f.Geometry != nil {
+			t.Fatalf("geometry should be nil")
+		}
+
+		if f == nil {
+			t.Fatalf("feature should not be nil")
+		}
+	})
+}
