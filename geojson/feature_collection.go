@@ -20,3 +20,25 @@ func NewFeatureCollection() *FeatureCollection {
 		Features: []*Feature{},
 	}
 }
+
+func newFeatureCollectionDoc(fc FeatureCollection) (temp map[string]interface{}) {
+	if fc.ExtraMembers != nil {
+		temp = fc.ExtraMembers.Clone()
+	} else {
+		temp = make(map[string]interface{}, 3)
+	}
+
+	temp["type"] = featureCollection
+	delete(temp, "bbox")
+	if fc.BBox != nil {
+		temp["bbox"] = fc.BBox
+	}
+
+	if fc.Features == nil {
+		temp["features"] = []*Feature{}
+	} else {
+		temp["features"] = fc.Features
+	}
+
+	return temp
+}
