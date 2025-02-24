@@ -1,6 +1,9 @@
 package geojson
 
-import "github.com/pchchv/geo"
+import (
+	"github.com/pchchv/geo"
+	"go.mongodb.org/mongo-driver/bson"
+)
 
 // Geometry matches the structure of a GeoJSON Geometry.
 type Geometry struct {
@@ -39,4 +42,16 @@ type geometryMarshallDoc struct {
 	Type        string       `json:"type" bson:"type"`
 	Coordinates geo.Geometry `json:"coordinates,omitempty" bson:"coordinates,omitempty"`
 	Geometries  []*Geometry  `json:"geometries,omitempty" bson:"geometries,omitempty"`
+}
+
+type bsonGeometry struct {
+	Type        string        `json:"type" bson:"type"`
+	Coordinates bson.RawValue `json:"coordinates" bson:"coordinates"`
+	Geometries  []*Geometry   `json:"geometries,omitempty" bson:"geometries"`
+}
+
+type jsonGeometry struct {
+	Type        string           `json:"type"`
+	Coordinates nocopyRawMessage `json:"coordinates"`
+	Geometries  []*Geometry      `json:"geometries,omitempty"`
 }
