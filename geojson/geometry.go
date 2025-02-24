@@ -3,6 +3,7 @@ package geojson
 import (
 	"github.com/pchchv/geo"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
 )
 
 // Geometry matches the structure of a GeoJSON Geometry.
@@ -36,6 +37,39 @@ func NewGeometry(g geo.Geometry) *Geometry {
 	}
 
 	return jg
+}
+
+// MarshalJSON will marshal the geometry into the correct JSON structure.
+func (g *Geometry) MarshalJSON() ([]byte, error) {
+	if g.Coordinates == nil && len(g.Geometries) == 0 {
+		return []byte(`null`), nil
+	}
+
+	ng := newGeometryMarshallDoc(g)
+	return marshalJSON(ng)
+}
+
+// MarshalBSON will convert the geometry into a
+// BSON document with the structure of a GeoJSON Geometry.
+// This function is used when the geometry is the
+// top level document to be marshalled.
+func (g *Geometry) MarshalBSON() ([]byte, error) {
+	ng := newGeometryMarshallDoc(g)
+	return bson.Marshal(ng)
+}
+
+// MarshalBSONValue will marshal the geometry into a
+// BSON value with the structure of a GeoJSON Geometry.
+func (g *Geometry) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	// implementing MarshalBSONValue allows us to
+	// marshal into a null value needed to
+	// match behavior with the JSON marshalling
+	if g.Coordinates == nil && len(g.Geometries) == 0 {
+		return bsontype.Type(0x0A), nil, nil
+	}
+
+	ng := newGeometryMarshallDoc(g)
+	return bson.MarshalValue(ng)
 }
 
 type geometryMarshallDoc struct {
