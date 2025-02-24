@@ -1,6 +1,7 @@
 package geojson
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -95,4 +96,162 @@ func TestGeometryMarshal(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGeometryUnmarshal(t *testing.T) {
+	cases := []struct {
+		name string
+		geom geo.Geometry
+	}{
+		{
+			name: "point",
+			geom: geo.Point{1, 2},
+		},
+		{
+			name: "multi point",
+			geom: geo.MultiPoint{{1, 2}, {3, 4}},
+		},
+		{
+			name: "linestring",
+			geom: geo.LineString{{1, 2}, {3, 4}, {5, 6}},
+		},
+		{
+			name: "multi linestring",
+			geom: geo.MultiLineString{},
+		},
+		{
+			name: "polygon",
+			geom: geo.Polygon{},
+		},
+		{
+			name: "multi polygon",
+			geom: geo.MultiPolygon{},
+		},
+		{
+			name: "collection",
+			geom: geo.Collection{geo.LineString{{1, 2}, {3, 4}}, geo.Point{5, 6}},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			data, err := NewGeometry(tc.geom).MarshalJSON()
+			if err != nil {
+				t.Fatalf("marshal error: %v", err)
+			}
+
+			// unmarshal
+			g, err := UnmarshalGeometry(data)
+			if err != nil {
+				t.Errorf("unmarshal error: %v", err)
+			}
+
+			if g.Type != tc.geom.GeoJSONType() {
+				t.Errorf("incorrenct type: %v != %v", g.Type, tc.geom.GeoJSONType())
+			}
+
+			if !geo.Equal(g.Geometry(), tc.geom) {
+				t.Errorf("incorrect geometry")
+				t.Logf("%[1]T, %[1]v", g.Geometry())
+				t.Log(tc.geom)
+			}
+		})
+	}
+
+	// invalid type
+	if _, err := UnmarshalGeometry([]byte(`{
+		"type": "arc",
+		"coordinates": [[0, 0]]
+	}`)); err == nil {
+		t.Errorf("should return error for invalid type")
+	} else if !strings.Contains(err.Error(), "invalid geometry") {
+		t.Errorf("incorrect error: %v", err)
+	}
+
+	// invalid json
+	// truncated
+	if _, err := UnmarshalGeometry([]byte(`{"type": "arc",`)); err == nil {
+		t.Errorf("should return error for invalid json")
+	}
+
+	g := &Geometry{}
+	// truncated
+	if err := g.UnmarshalJSON([]byte(`{"type": "arc",`)); err == nil {
+		t.Errorf("should return error for invalid json")
+	}
+
+	// invalid type (null)
+	if _, err := UnmarshalGeometry([]byte(`null`)); err == nil {
+		t.Errorf("should return error for invalid type")
+	} else if !strings.Contains(err.Error(), "invalid geometry") {
+		t.Errorf("incorrect error: %v", err)
+	}
+}
+
+func TestGeometryUnmarshal_errors(t *testing.T) {
+	cases := []struct {
+		name string
+		data string
+	}{
+		{
+			name: "point",
+			data: `{"type":"Point","coordinates":1}`,
+		},
+		{
+			name: "multi point",
+			data: `{"type":"MultiPoint","coordinates":2}`,
+		},
+		{
+			name: "linestring",
+			data: `{"type":"LineString","coordinates":3}`,
+		},
+		{
+			name: "multi linestring",
+			data: `{"type":"MultiLineString","coordinates":4}`,
+		},
+		{
+			name: "polygon",
+			data: `{"type":"Polygon","coordinates":10.2}`,
+		},
+		{
+			name: "multi polygon",
+			data: `{"type":"MultiPolygon","coordinates":{}}`,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := UnmarshalGeometry([]byte(tc.data)); err == nil {
+				t.Errorf("expected error, got nothing")
+			}
+		})
+	}
+}
+
+func TestGeometryMarshalJSON_null(t *testing.T) {
+	t.Run("pointer", func(t *testing.T) {
+		type S struct {
+			GeoJSON *Geometry `json:"geojson"`
+		}
+
+		var s S
+		if err := json.Unmarshal([]byte(`{"geojson": null}`), &s); err != nil {
+			t.Fatalf("unmarshal error: %v", err)
+		} else if s.GeoJSON != nil {
+			t.Errorf("should be nil, got: %v", s)
+		}
+	})
+
+	t.Run("feature with null geometry", func(t *testing.T) {
+		type S struct {
+			GeoJSON *Feature `json:"geojson"`
+		}
+
+		var s S
+		if err := json.Unmarshal([]byte(`{"geojson": {"type":"Feature","geometry":null,"properties":null}}`), &s); err != nil {
+			t.Fatalf("unmarshal error: %v", err)
+		} else if s.GeoJSON.Geometry != nil {
+			t.Errorf("should be nil, got: %v", s)
+		}
+	})
 }
