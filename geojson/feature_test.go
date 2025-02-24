@@ -2,9 +2,12 @@ package geojson
 
 import (
 	"bytes"
+	"encoding/json"
 	"testing"
 
 	"github.com/pchchv/geo"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
 )
 
 func TestNewFeature(t *testing.T) {
@@ -50,3 +53,47 @@ func TestFeatureMarshalJSON_Bound(t *testing.T) {
 		t.Errorf("should set type to polygon coords: %v", string(blob))
 	}
 }
+
+func TestFeature_marshalValue(t *testing.T) {
+	f := NewFeature(geo.Point{1, 2})
+	if blob, err := json.Marshal(*f); err != nil {
+		t.Fatalf("should marshal to json just fine but got %v", err)
+	} else if !bytes.Contains(blob, []byte(`"properties":null`)) {
+		t.Errorf("json should set properties to null if there are none")
+	}
+
+	if blob, err := bson.Marshal(*f); err != nil {
+		t.Fatalf("should marshal to bson just fine but got %v", err)
+	} else if !bytes.Contains(blob, append([]byte{byte(bsontype.Null)}, []byte("properties")...)) {
+		t.Errorf("json should set properties to null if there are none")
+	}
+}
+
+func TestFeatureMarshal(t *testing.T) {
+	f := NewFeature(geo.Point{1, 2})
+	if blob, err := json.Marshal(f); err != nil {
+		t.Fatalf("should marshal to json just fine but got %v", err)
+	} else if !bytes.Contains(blob, []byte(`"properties":null`)) {
+		t.Errorf("json should set properties to null if there are none")
+	} else if !bytes.Contains(blob, []byte(`"type":"Feature"`)) {
+		t.Errorf("json should set properties to null if there are none")
+	}
+}
+
+func TestUnmarshalFeature_GeometryCollection(t *testing.T) {
+	rawJSON := `
+	  { "type": "Feature",
+	    "geometry": {"type":"GeometryCollection","geometries":[{"type": "Point", "coordinates": [102.0, 0.5]}]}
+	  }`
+
+	f, err := UnmarshalFeature([]byte(rawJSON))
+	if err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+
+	wantType := geo.Collection{}.GeoJSONType()
+	if f.Geometry.GeoJSONType() != wantType {
+		t.Fatalf("invalid GeoJSONType: %v", f.Geometry.GeoJSONType())
+	}
+}
+
