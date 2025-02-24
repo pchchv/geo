@@ -72,6 +72,31 @@ func (g *Geometry) MarshalBSONValue() (bsontype.Type, []byte, error) {
 	return bson.MarshalValue(ng)
 }
 
+// Geometry returns the geo.Geometry for the geojson Geometry.
+// This will convert the "Geometries" into a geo.Collection if applicable.
+func (g *Geometry) Geometry() geo.Geometry {
+	if g.Coordinates != nil {
+		return g.Coordinates
+	}
+
+	c := make(geo.Collection, 0, len(g.Geometries))
+	for _, geom := range g.Geometries {
+		c = append(c, geom.Geometry())
+	}
+
+	return c
+}
+
+// UnmarshalGeometry decodes the JSON data into a GeoJSON feature.
+// Alternately one can call json.Unmarshal(g) directly for the same result.
+func UnmarshalGeometry(data []byte) (g *Geometry, err error) {
+	if err = unmarshalJSON(data, g); err != nil {
+		return nil, err
+	}
+
+	return
+}
+
 type geometryMarshallDoc struct {
 	Type        string       `json:"type" bson:"type"`
 	Coordinates geo.Geometry `json:"coordinates,omitempty" bson:"coordinates,omitempty"`
