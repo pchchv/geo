@@ -1,11 +1,11 @@
 package geojson
 
 import (
+	"fmt"
+
 	"github.com/pchchv/geo"
 	"go.mongodb.org/mongo-driver/bson"
 )
-
-// var _ geo.Pointer = &Feature{}
 
 // Feature corresponds to GeoJSON feature object.
 type Feature struct {
@@ -39,77 +39,6 @@ func (f Feature) MarshalBSON() ([]byte, error) {
 	return bson.Marshal(newFeatureDoc(&f))
 }
 
-// // UnmarshalFeature decodes the data into a GeoJSON feature.
-// // Alternately one can call json.Unmarshal(f) directly for the same result.
-// func UnmarshalFeature(data []byte) (*Feature, error) {
-// 	f := &Feature{}
-// 	err := f.UnmarshalJSON(data)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return f, nil
-// }
-
-// // UnmarshalJSON handles the correct unmarshalling of the data
-// // into the geo.Geometry types.
-// func (f *Feature) UnmarshalJSON(data []byte) error {
-// 	if bytes.Equal(data, []byte(`null`)) {
-// 		*f = Feature{}
-// 		return nil
-// 	}
-
-// 	doc := &featureDoc{}
-// 	err := unmarshalJSON(data, &doc)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	return featureUnmarshalFinish(doc, f)
-// }
-
-// // UnmarshalBSON will unmarshal a BSON document created with bson.Marshal.
-// func (f *Feature) UnmarshalBSON(data []byte) error {
-// 	doc := &featureDoc{}
-// 	err := bson.Unmarshal(data, &doc)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	return featureUnmarshalFinish(doc, f)
-// }
-
-// // Point implements the geo.Pointer interface so that Features can be used
-// // with quadtrees. The point returned is the center of the Bound of the geometry.
-// // To represent the geometry with another point you must create a wrapper type.
-// func (f *Feature) Point() geo.Point {
-// 	return f.Geometry.Bound().Center()
-// }
-
-// func featureUnmarshalFinish(doc *featureDoc, f *Feature) error {
-// 	if doc.Type != "Feature" {
-// 		return fmt.Errorf("geojson: not a feature: type=%s", doc.Type)
-// 	}
-
-// 	var g geo.Geometry
-// 	if doc.Geometry != nil {
-// 		if doc.Geometry.Coordinates == nil && doc.Geometry.Geometries == nil {
-// 			return ErrInvalidGeometry
-// 		}
-// 		g = doc.Geometry.Geometry()
-// 	}
-
-// 	*f = Feature{
-// 		ID:         doc.ID,
-// 		Type:       doc.Type,
-// 		Properties: doc.Properties,
-// 		BBox:       doc.BBox,
-// 		Geometry:   g,
-// 	}
-
-// 	return nil
-// }
-
 type featureDoc struct {
 	ID         interface{} `json:"id,omitempty" bson:"id"`
 	Type       string      `json:"type" bson:"type"`
@@ -131,4 +60,28 @@ func newFeatureDoc(f *Feature) *featureDoc {
 	}
 
 	return doc
+}
+
+func featureUnmarshalFinish(doc *featureDoc, f *Feature) error {
+	if doc.Type != "Feature" {
+		return fmt.Errorf("geojson: not a feature: type=%s", doc.Type)
+	}
+
+	var g geo.Geometry
+	if doc.Geometry != nil {
+		if doc.Geometry.Coordinates == nil && doc.Geometry.Geometries == nil {
+			return ErrInvalidGeometry
+		}
+		g = doc.Geometry.Geometry()
+	}
+
+	*f = Feature{
+		ID:         doc.ID,
+		Type:       doc.Type,
+		Properties: doc.Properties,
+		BBox:       doc.BBox,
+		Geometry:   g,
+	}
+
+	return nil
 }
