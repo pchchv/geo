@@ -1,6 +1,7 @@
 package geojson
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/pchchv/geo"
@@ -37,6 +38,32 @@ func (f Feature) MarshalJSON() ([]byte, error) {
 // Alternately one can call json.Marshal(f) directly for the same result.
 func (f Feature) MarshalBSON() ([]byte, error) {
 	return bson.Marshal(newFeatureDoc(&f))
+}
+
+// UnmarshalJSON handles the correct unmarshalling of the data
+// into the geo.Geometry types.
+func (f *Feature) UnmarshalJSON(data []byte) error {
+	if bytes.Equal(data, []byte(`null`)) {
+		*f = Feature{}
+		return nil
+	}
+
+	doc := &featureDoc{}
+	if err := unmarshalJSON(data, &doc); err != nil {
+		return err
+	}
+
+	return featureUnmarshalFinish(doc, f)
+}
+
+// UnmarshalBSON will unmarshal a BSON document created with bson.Marshal.
+func (f *Feature) UnmarshalBSON(data []byte) error {
+	doc := &featureDoc{}
+	if err := bson.Unmarshal(data, &doc); err != nil {
+		return err
+	}
+
+	return featureUnmarshalFinish(doc, f)
 }
 
 type featureDoc struct {
