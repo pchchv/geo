@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/pchchv/geo"
@@ -78,6 +79,47 @@ func TestFeatureMarshal(t *testing.T) {
 		t.Errorf("json should set properties to null if there are none")
 	} else if !bytes.Contains(blob, []byte(`"type":"Feature"`)) {
 		t.Errorf("json should set properties to null if there are none")
+	}
+}
+
+func TestUnmarshalFeature(t *testing.T) {
+	rawJSON := `
+	  { "type": "Feature",
+	    "geometry": {"type": "Point", "coordinates": [102.0, 0.5]},
+	    "properties": {"prop0": "value0"}
+	  }`
+
+	f, err := UnmarshalFeature([]byte(rawJSON))
+	if err != nil {
+		t.Fatalf("unmarshal error: %e", err)
+	}
+
+	if f.Type != "Feature" {
+		t.Errorf("should have type of Feature got: %v", f.Type)
+	}
+
+	if len(f.Properties) != 1 {
+		t.Errorf("should have 1 property but got: %v", f.Properties)
+	}
+
+	// not a feature
+	data, _ := NewFeatureCollection().MarshalJSON()
+	if _, err = UnmarshalFeature(data); err == nil {
+		t.Error("should return error if not a feature")
+	} else if !strings.Contains(err.Error(), "not a feature") {
+		t.Errorf("incorrect error: %e", err)
+	}
+
+	// invalid json
+	// truncated
+	if _, err = UnmarshalFeature([]byte(`{"type": "Feature",`)); err == nil {
+		t.Errorf("should return error for invalid json")
+	}
+
+	f = &Feature{}
+	// truncated
+	if err = f.UnmarshalJSON([]byte(`{"type": "Feature",`)); err == nil {
+		t.Errorf("should return error for invalid json")
 	}
 }
 
@@ -239,5 +281,16 @@ func TestUnmarshalFeatureID(t *testing.T) {
 
 	if v, ok := f.ID.(string); !ok || v != "abcd" {
 		t.Errorf("should parse id as string, got %T %s", f.ID, v)
+	}
+}
+
+func TestMarshalRing(t *testing.T) {
+	ring := geo.Ring{{0, 0}, {1, 1}, {2, 1}, {0, 0}}
+	f := NewFeature(ring)
+	if data, err := f.MarshalJSON(); err != nil {
+		t.Fatalf("should marshal, %e", err)
+	} else if !bytes.Equal(data, []byte(`{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[0,0],[1,1],[2,1],[0,0]]]},"properties":null}`)) {
+		t.Errorf("data not correct")
+		t.Logf("%v", string(data))
 	}
 }
