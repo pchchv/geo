@@ -34,3 +34,9 @@ func NewGeometry(g geo.Geometry) *Geometry {
 
 	return jg
 }
+
+type geometryMarshallDoc struct {
+	Type        string       `json:"type" bson:"type"`
+	Coordinates geo.Geometry `json:"coordinates,omitempty" bson:"coordinates,omitempty"`
+	Geometries  []*Geometry  `json:"geometries,omitempty" bson:"geometries,omitempty"`
+}
