@@ -8,6 +8,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+var _ geo.Pointer = &Feature{}
+
 // Feature corresponds to GeoJSON feature object.
 type Feature struct {
 	ID         interface{}  `json:"id,omitempty"`
@@ -40,8 +42,8 @@ func (f Feature) MarshalBSON() ([]byte, error) {
 	return bson.Marshal(newFeatureDoc(&f))
 }
 
-// UnmarshalJSON handles the correct unmarshalling of the data
-// into the geo.Geometry types.
+// UnmarshalJSON handles the correct unmarshalling of the
+// data into the geo.Geometry types.
 func (f *Feature) UnmarshalJSON(data []byte) error {
 	if bytes.Equal(data, []byte(`null`)) {
 		*f = Feature{}
@@ -64,6 +66,23 @@ func (f *Feature) UnmarshalBSON(data []byte) error {
 	}
 
 	return featureUnmarshalFinish(doc, f)
+}
+
+// UnmarshalFeature decodes the data into a GeoJSON feature.
+// Alternately one can call json.Unmarshal(f) directly for the same result.
+func UnmarshalFeature(data []byte) (f *Feature, err error) {
+	if err = f.UnmarshalJSON(data); err != nil {
+		return nil, err
+	}
+
+	return
+}
+
+// Point implements the geo.Pointer interface so that Features can be used with quadtrees.
+// The point returned is the center of the Bound of the geometry.
+// To represent the geometry with another point you must create a wrapper type.
+func (f *Feature) Point() geo.Point {
+	return f.Geometry.Bound().Center()
 }
 
 type featureDoc struct {
