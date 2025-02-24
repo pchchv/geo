@@ -55,3 +55,32 @@ type jsonGeometry struct {
 	Coordinates nocopyRawMessage `json:"coordinates"`
 	Geometries  []*Geometry      `json:"geometries,omitempty"`
 }
+
+func newGeometryMarshallDoc(g *Geometry) *geometryMarshallDoc {
+	ng := &geometryMarshallDoc{}
+	switch g := g.Coordinates.(type) {
+	case geo.Ring:
+		ng.Coordinates = geo.Polygon{g}
+	case geo.Bound:
+		ng.Coordinates = g.ToPolygon()
+	case geo.Collection:
+		ng.Geometries = make([]*Geometry, 0, len(g))
+		for _, c := range g {
+			ng.Geometries = append(ng.Geometries, NewGeometry(c))
+		}
+		ng.Type = g.GeoJSONType()
+	default:
+		ng.Coordinates = g
+	}
+
+	if ng.Coordinates != nil {
+		ng.Type = ng.Coordinates.GeoJSONType()
+	}
+
+	if len(g.Geometries) > 0 {
+		ng.Geometries = g.Geometries
+		ng.Type = geo.Collection{}.GeoJSONType()
+	}
+
+	return ng
+}
