@@ -3,6 +3,7 @@ package geojson
 import (
 	"bytes"
 	"encoding/json"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -292,5 +293,101 @@ func TestMarshalRing(t *testing.T) {
 	} else if !bytes.Equal(data, []byte(`{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[0,0],[1,1],[2,1],[0,0]]]},"properties":null}`)) {
 		t.Errorf("data not correct")
 		t.Logf("%v", string(data))
+	}
+}
+
+// // uncomment to test/benchmark custom json marshalling
+// func init() {
+// 	var c = jsoniter.Config{
+// 		EscapeHTML:              true,
+// 		SortMapKeys:             false,
+// 		ValidateJsonRawMessage:  false,
+// 		MarshalFloatWith6Digits: true,
+// 	}.Froze()
+
+// 	CustomJSONMarshaler = c
+// 	CustomJSONUnmarshaler = c
+// }
+
+func BenchmarkFeatureMarshalJSON(b *testing.B) {
+	data, err := os.ReadFile("../encoding/mvt/testdata/16-17896-24449.json")
+	if err != nil {
+		b.Fatalf("could not open file: %e", err)
+	}
+
+	tile := map[string]*FeatureCollection{}
+	if err = json.Unmarshal(data, &tile); err != nil {
+		b.Fatalf("could not unmarshal: %e", err)
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := marshalJSON(tile)
+		if err != nil {
+			b.Fatalf("marshal error: %e", err)
+		}
+	}
+}
+
+func BenchmarkFeatureUnmarshalJSON(b *testing.B) {
+	data, err := os.ReadFile("../encoding/mvt/testdata/16-17896-24449.json")
+	if err != nil {
+		b.Fatalf("could not open file: %e", err)
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		tile := map[string]*FeatureCollection{}
+		if err = unmarshalJSON(data, &tile); err != nil {
+			b.Fatalf("could not unmarshal: %e", err)
+		}
+	}
+}
+
+func BenchmarkFeatureMarshalBSON(b *testing.B) {
+	data, err := os.ReadFile("../encoding/mvt/testdata/16-17896-24449.json")
+	if err != nil {
+		b.Fatalf("could not open file: %e", err)
+	}
+
+	tile := map[string]*FeatureCollection{}
+	if err = json.Unmarshal(data, &tile); err != nil {
+		b.Fatalf("could not unmarshal: %e", err)
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := bson.Marshal(tile); err != nil {
+			b.Fatalf("marshal error: %e", err)
+		}
+	}
+}
+
+func BenchmarkFeatureUnmarshalBSON(b *testing.B) {
+	data, err := os.ReadFile("../encoding/mvt/testdata/16-17896-24449.json")
+	if err != nil {
+		b.Fatalf("could not open file: %e", err)
+	}
+
+	tile := map[string]*FeatureCollection{}
+	if err = json.Unmarshal(data, &tile); err != nil {
+		b.Fatalf("could not unmarshal: %e", err)
+	}
+
+	bdata, err := bson.Marshal(tile)
+	if err != nil {
+		b.Fatalf("could not marshal: %e", err)
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		tile := map[string]*FeatureCollection{}
+		if err = bson.Unmarshal(bdata, &tile); err != nil {
+			b.Fatalf("could not unmarshal: %e", err)
+		}
 	}
 }
