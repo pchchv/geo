@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/pchchv/geo"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func TestGeometry(t *testing.T) {
@@ -76,7 +77,7 @@ func TestGeometryMarshal(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			data, err := NewGeometry(tc.geom).MarshalJSON()
 			if err != nil {
-				t.Fatalf("marshal error: %v", err)
+				t.Fatalf("marshal error: %e", err)
 			}
 
 			if !strings.Contains(string(data), tc.include) {
@@ -87,7 +88,7 @@ func TestGeometryMarshal(t *testing.T) {
 			g := &Geometry{Coordinates: tc.geom}
 			data, err = g.MarshalJSON()
 			if err != nil {
-				t.Fatalf("marshal error: %v", err)
+				t.Fatalf("marshal error: %e", err)
 			}
 
 			if !strings.Contains(string(data), tc.include) {
@@ -137,13 +138,13 @@ func TestGeometryUnmarshal(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			data, err := NewGeometry(tc.geom).MarshalJSON()
 			if err != nil {
-				t.Fatalf("marshal error: %v", err)
+				t.Fatalf("marshal error: %e", err)
 			}
 
 			// unmarshal
 			g, err := UnmarshalGeometry(data)
 			if err != nil {
-				t.Errorf("unmarshal error: %v", err)
+				t.Errorf("unmarshal error: %e", err)
 			}
 
 			if g.Type != tc.geom.GeoJSONType() {
@@ -165,7 +166,7 @@ func TestGeometryUnmarshal(t *testing.T) {
 	}`)); err == nil {
 		t.Errorf("should return error for invalid type")
 	} else if !strings.Contains(err.Error(), "invalid geometry") {
-		t.Errorf("incorrect error: %v", err)
+		t.Errorf("incorrect error: %e", err)
 	}
 
 	// invalid json
@@ -184,7 +185,7 @@ func TestGeometryUnmarshal(t *testing.T) {
 	if _, err := UnmarshalGeometry([]byte(`null`)); err == nil {
 		t.Errorf("should return error for invalid type")
 	} else if !strings.Contains(err.Error(), "invalid geometry") {
-		t.Errorf("incorrect error: %v", err)
+		t.Errorf("incorrect error: %e", err)
 	}
 }
 
@@ -236,7 +237,7 @@ func TestGeometryMarshalJSON_null(t *testing.T) {
 
 		var s S
 		if err := json.Unmarshal([]byte(`{"geojson": null}`), &s); err != nil {
-			t.Fatalf("unmarshal error: %v", err)
+			t.Fatalf("unmarshal error: %e", err)
 		} else if s.GeoJSON != nil {
 			t.Errorf("should be nil, got: %v", s)
 		}
@@ -249,9 +250,85 @@ func TestGeometryMarshalJSON_null(t *testing.T) {
 
 		var s S
 		if err := json.Unmarshal([]byte(`{"geojson": {"type":"Feature","geometry":null,"properties":null}}`), &s); err != nil {
-			t.Fatalf("unmarshal error: %v", err)
+			t.Fatalf("unmarshal error: %e", err)
 		} else if s.GeoJSON.Geometry != nil {
 			t.Errorf("should be nil, got: %v", s)
 		}
 	})
+}
+
+func BenchmarkGeometryMarshalJSON(b *testing.B) {
+	ls := geo.LineString{}
+	for i := 0.0; i < 1000; i++ {
+		ls = append(ls, geo.Point{i * 3.45, i * -58.4})
+	}
+
+	g := &Geometry{Coordinates: ls}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := json.Marshal(g); err != nil {
+			b.Fatalf("unexpected error: %e", err)
+		}
+	}
+}
+
+func BenchmarkGeometryUnmarshalJSON(b *testing.B) {
+	ls := geo.LineString{}
+	for i := 0.0; i < 1000; i++ {
+		ls = append(ls, geo.Point{i * 3.45, i * -58.4})
+	}
+
+	g := &Geometry{Coordinates: ls}
+	data, err := json.Marshal(g)
+	if err != nil {
+		b.Fatalf("marshal error: %e", err)
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := json.Unmarshal(data, g); err != nil {
+			b.Fatalf("unexpected error: %e", err)
+		}
+	}
+}
+
+func BenchmarkGeometryMarshalBSON(b *testing.B) {
+	ls := geo.LineString{}
+	for i := 0.0; i < 1000; i++ {
+		ls = append(ls, geo.Point{i * 3.45, i * -58.4})
+	}
+
+	g := &Geometry{Coordinates: ls}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := bson.Marshal(g); err != nil {
+			b.Fatalf("unexpected error: %e", err)
+		}
+	}
+}
+
+func BenchmarkGeometryUnmarshalBSON(b *testing.B) {
+	ls := geo.LineString{}
+	for i := 0.0; i < 1000; i++ {
+		ls = append(ls, geo.Point{i * 3.45, i * -58.4})
+	}
+
+	g := &Geometry{Coordinates: ls}
+	data, err := bson.Marshal(g)
+	if err != nil {
+		b.Fatalf("marshal error: %e", err)
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := bson.Unmarshal(data, g); err != nil {
+			b.Fatalf("unexpected error: %e", err)
+		}
+	}
 }
