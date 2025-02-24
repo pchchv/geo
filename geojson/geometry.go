@@ -1,10 +1,14 @@
 package geojson
 
 import (
+	"errors"
+
 	"github.com/pchchv/geo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
 )
+
+var ErrInvalidGeometry = errors.New("geojson: invalid geometry")
 
 // Geometry matches the structure of a GeoJSON Geometry.
 type Geometry struct {
@@ -95,6 +99,114 @@ func UnmarshalGeometry(data []byte) (g *Geometry, err error) {
 	}
 
 	return
+}
+
+// UnmarshalJSON will unmarshal the correct geometry from the JSON structure.
+func (g *Geometry) UnmarshalJSON(data []byte) (err error) {
+	jg := &jsonGeometry{}
+	if err = unmarshalJSON(data, jg); err != nil {
+		return
+	}
+
+	switch jg.Type {
+	case "Point":
+		p := geo.Point{}
+		if err = unmarshalJSON(jg.Coordinates, &p); err != nil {
+			return
+		}
+		g.Coordinates = p
+	case "MultiPoint":
+		mp := geo.MultiPoint{}
+		if err = unmarshalJSON(jg.Coordinates, &mp); err != nil {
+			return
+		}
+		g.Coordinates = mp
+	case "LineString":
+		ls := geo.LineString{}
+		if err = unmarshalJSON(jg.Coordinates, &ls); err != nil {
+			return
+		}
+		g.Coordinates = ls
+	case "MultiLineString":
+		mls := geo.MultiLineString{}
+		if err = unmarshalJSON(jg.Coordinates, &mls); err != nil {
+			return
+		}
+		g.Coordinates = mls
+	case "Polygon":
+		p := geo.Polygon{}
+		if err = unmarshalJSON(jg.Coordinates, &p); err != nil {
+			return
+		}
+		g.Coordinates = p
+	case "MultiPolygon":
+		mp := geo.MultiPolygon{}
+		if err = unmarshalJSON(jg.Coordinates, &mp); err != nil {
+			return
+		}
+		g.Coordinates = mp
+	case "GeometryCollection":
+		g.Geometries = jg.Geometries
+	default:
+		return ErrInvalidGeometry
+	}
+
+	g.Type = g.Geometry().GeoJSONType()
+	return nil
+}
+
+// UnmarshalBSON will unmarshal a BSON document created with bson.Marshal.
+func (g *Geometry) UnmarshalBSON(data []byte) (err error) {
+	bg := &bsonGeometry{}
+	if err = bson.Unmarshal(data, bg); err != nil {
+		return
+	}
+
+	switch bg.Type {
+	case "Point":
+		p := geo.Point{}
+		if err = bg.Coordinates.Unmarshal(&p); err != nil {
+			return
+		}
+		g.Coordinates = p
+	case "MultiPoint":
+		mp := geo.MultiPoint{}
+		if err = bg.Coordinates.Unmarshal(&mp); err != nil {
+			return
+		}
+		g.Coordinates = mp
+	case "LineString":
+		ls := geo.LineString{}
+		if err = bg.Coordinates.Unmarshal(&ls); err != nil {
+			return
+		}
+		g.Coordinates = ls
+	case "MultiLineString":
+		mls := geo.MultiLineString{}
+		if err = bg.Coordinates.Unmarshal(&mls); err != nil {
+			return
+		}
+		g.Coordinates = mls
+	case "Polygon":
+		p := geo.Polygon{}
+		if err = bg.Coordinates.Unmarshal(&p); err != nil {
+			return
+		}
+		g.Coordinates = p
+	case "MultiPolygon":
+		mp := geo.MultiPolygon{}
+		if err = bg.Coordinates.Unmarshal(&mp); err != nil {
+			return
+		}
+		g.Coordinates = mp
+	case "GeometryCollection":
+		g.Geometries = bg.Geometries
+	default:
+		return ErrInvalidGeometry
+	}
+
+	g.Type = g.Geometry().GeoJSONType()
+	return nil
 }
 
 type geometryMarshallDoc struct {
