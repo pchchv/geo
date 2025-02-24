@@ -172,3 +172,72 @@ func TestUnmarshalBSON_missingGeometry(t *testing.T) {
 		}
 	})
 }
+
+func TestUnmarshalFeature_BBox(t *testing.T) {
+	rawJSON := `
+	  { "type": "Feature",
+	    "geometry": {"type": "Point", "coordinates": [102.0, 0.5]},
+		"bbox": [1,2,3,4],
+	    "properties": {"prop0": "value0"}
+	  }`
+
+	if f, err := UnmarshalFeature([]byte(rawJSON)); err != nil {
+		t.Fatalf("unmarshal error: %e", err)
+	} else if !f.BBox.Valid() {
+		t.Errorf("bbox should be valid: %v", f.BBox)
+	}
+}
+
+func TestMarshalFeatureID(t *testing.T) {
+	f := &Feature{
+		ID: "asdf",
+	}
+
+	data, err := f.MarshalJSON()
+	if err != nil {
+		t.Fatalf("should marshal, %e", err)
+	} else if !bytes.Equal(data, []byte(`{"id":"asdf","type":"Feature","geometry":null,"properties":null}`)) {
+		t.Errorf("data not correct")
+		t.Logf("%v", string(data))
+	}
+
+	f.ID = 123
+	if data, err = f.MarshalJSON(); err != nil {
+		t.Fatalf("should marshal, %e", err)
+	} else if !bytes.Equal(data, []byte(`{"id":123,"type":"Feature","geometry":null,"properties":null}`)) {
+		t.Errorf("data not correct")
+		t.Logf("%v", string(data))
+	}
+}
+
+func TestUnmarshalFeatureID(t *testing.T) {
+	rawJSON := `
+	  { "type": "Feature",
+	    "id": 123,
+	    "geometry": {"type": "Point", "coordinates": [102.0, 0.5]}
+	  }`
+
+	f, err := UnmarshalFeature([]byte(rawJSON))
+	if err != nil {
+		t.Fatalf("should unmarshal feature without issue, err %e", err)
+	}
+
+	if v, ok := f.ID.(float64); !ok || v != 123 {
+		t.Errorf("should parse id as number, got %T %f", f.ID, v)
+	}
+
+	rawJSON = `
+	  { "type": "Feature",
+	    "id": "abcd",
+	    "geometry": {"type": "Point", "coordinates": [102.0, 0.5]}
+	  }`
+
+	f, err = UnmarshalFeature([]byte(rawJSON))
+	if err != nil {
+		t.Fatalf("should unmarshal feature without issue, err %e", err)
+	}
+
+	if v, ok := f.ID.(string); !ok || v != "abcd" {
+		t.Errorf("should parse id as string, got %T %s", f.ID, v)
+	}
+}
