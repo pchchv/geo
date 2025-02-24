@@ -1,5 +1,7 @@
 package geojson
 
+import "go.mongodb.org/mongo-driver/bson"
+
 const featureCollection = "FeatureCollection"
 
 // A FeatureCollection correlates to a GeoJSON feature collection.
@@ -20,6 +22,24 @@ func NewFeatureCollection() *FeatureCollection {
 		Features: []*Feature{},
 	}
 }
+
+// MarshalJSON converts the feature collection object into the proper JSON.
+// It will handle the encoding of all the child features and geometries.
+// Alternately one can call json.Marshal(fc) directly for the same result.
+// Items in the ExtraMembers map will be included in the base of the feature collection object.
+func (fc FeatureCollection) MarshalJSON() ([]byte, error) {
+	m := newFeatureCollectionDoc(fc)
+	return marshalJSON(m)
+}
+
+// MarshalBSON converts the feature collection object
+// into a BSON document represented by bytes.
+// It will handle the encoding of all the child features and geometries.
+// Items in the ExtraMembers map will be included in the
+// base of the feature collection object.
+func (fc FeatureCollection) MarshalBSON() ([]byte, error) {
+	m := newFeatureCollectionDoc(fc)
+	return bson.Marshal(m)
 
 func newFeatureCollectionDoc(fc FeatureCollection) (temp map[string]interface{}) {
 	if fc.ExtraMembers != nil {
