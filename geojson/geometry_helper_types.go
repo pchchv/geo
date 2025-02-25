@@ -219,3 +219,56 @@ func (mls *MultiLineString) UnmarshalBSON(data []byte) error {
 func (mls MultiLineString) Geometry() geo.Geometry {
 	return geo.MultiLineString(mls)
 }
+
+// Polygon is a helper type that
+// will marshal to/from a GeoJSON Polygon geometry.
+type Polygon geo.Polygon
+
+// MarshalJSON will convert the Polygon into a GeoJSON Polygon geometry.
+func (p Polygon) MarshalJSON() ([]byte, error) {
+	return marshalJSON(&Geometry{Coordinates: geo.Polygon(p)})
+}
+
+// MarshalBSON will convert the Polygon into a GeoJSON Polygon geometry.
+func (p Polygon) MarshalBSON() ([]byte, error) {
+	return bson.Marshal(&Geometry{Coordinates: geo.Polygon(p)})
+}
+
+// UnmarshalJSON will unmarshal the GeoJSON Polygon geometry.
+func (p *Polygon) UnmarshalJSON(data []byte) error {
+	g := &Geometry{}
+	err := unmarshalJSON(data, &g)
+	if err != nil {
+		return err
+	}
+
+	polygon, ok := g.Coordinates.(geo.Polygon)
+	if !ok {
+		return errors.New("geojson: not a Polygon type")
+	}
+
+	*p = Polygon(polygon)
+	return nil
+}
+
+// UnmarshalBSON will unmarshal the GeoJSON Polygon geometry.
+func (p *Polygon) UnmarshalBSON(data []byte) error {
+	g := &Geometry{}
+	err := bson.Unmarshal(data, &g)
+	if err != nil {
+		return err
+	}
+
+	polygon, ok := g.Coordinates.(geo.Polygon)
+	if !ok {
+		return errors.New("geojson: not a Polygon type")
+	}
+
+	*p = Polygon(polygon)
+	return nil
+}
+
+// Geometry will return the geo.Geometry version of the data.
+func (p Polygon) Geometry() geo.Geometry {
+	return geo.Polygon(p)
+}
