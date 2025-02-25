@@ -166,3 +166,56 @@ func (ls *LineString) UnmarshalBSON(data []byte) error {
 func (ls LineString) Geometry() geo.Geometry {
 	return geo.LineString(ls)
 }
+
+// MultiLineString is a helper type that
+// will marshal to/from a GeoJSON MultiLineString geometry.
+type MultiLineString geo.MultiLineString
+
+// MarshalJSON will convert the MultiLineString into a GeoJSON MultiLineString geometry.
+func (mls MultiLineString) MarshalJSON() ([]byte, error) {
+	return marshalJSON(&Geometry{Coordinates: geo.MultiLineString(mls)})
+}
+
+// MarshalBSON will convert the MultiLineString into a GeoJSON MultiLineString geometry.
+func (mls MultiLineString) MarshalBSON() ([]byte, error) {
+	return bson.Marshal(&Geometry{Coordinates: geo.MultiLineString(mls)})
+}
+
+// UnmarshalJSON will unmarshal the GeoJSON MultiPoint geometry.
+func (mls *MultiLineString) UnmarshalJSON(data []byte) error {
+	g := &Geometry{}
+	err := unmarshalJSON(data, &g)
+	if err != nil {
+		return err
+	}
+
+	multilineString, ok := g.Coordinates.(geo.MultiLineString)
+	if !ok {
+		return errors.New("geojson: not a MultiLineString type")
+	}
+
+	*mls = MultiLineString(multilineString)
+	return nil
+}
+
+// UnmarshalBSON will unmarshal the GeoJSON MultiPoint geometry.
+func (mls *MultiLineString) UnmarshalBSON(data []byte) error {
+	g := &Geometry{}
+	err := bson.Unmarshal(data, &g)
+	if err != nil {
+		return err
+	}
+
+	multilineString, ok := g.Coordinates.(geo.MultiLineString)
+	if !ok {
+		return errors.New("geojson: not a MultiLineString type")
+	}
+
+	*mls = MultiLineString(multilineString)
+	return nil
+}
+
+// Geometry will return the geo.Geometry version of the data.
+func (mls MultiLineString) Geometry() geo.Geometry {
+	return geo.MultiLineString(mls)
+}
