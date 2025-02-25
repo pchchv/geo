@@ -272,3 +272,56 @@ func (p *Polygon) UnmarshalBSON(data []byte) error {
 func (p Polygon) Geometry() geo.Geometry {
 	return geo.Polygon(p)
 }
+
+// MultiPolygon is a helper type that
+// will marshal to/from a GeoJSON MultiPolygon geometry.
+type MultiPolygon geo.MultiPolygon
+
+// MarshalJSON will convert the MultiPolygon into a GeoJSON MultiPolygon geometry.
+func (mp MultiPolygon) MarshalJSON() ([]byte, error) {
+	return marshalJSON(&Geometry{Coordinates: geo.MultiPolygon(mp)})
+}
+
+// MarshalBSON will convert the MultiPolygon into a GeoJSON MultiPolygon geometry.
+func (mp MultiPolygon) MarshalBSON() ([]byte, error) {
+	return bson.Marshal(&Geometry{Coordinates: geo.MultiPolygon(mp)})
+}
+
+// UnmarshalJSON will unmarshal the GeoJSON MultiPolygon geometry.
+func (mp *MultiPolygon) UnmarshalJSON(data []byte) error {
+	g := &Geometry{}
+	err := unmarshalJSON(data, &g)
+	if err != nil {
+		return err
+	}
+
+	multiPolygon, ok := g.Coordinates.(geo.MultiPolygon)
+	if !ok {
+		return errors.New("geojson: not a MultiPolygon type")
+	}
+
+	*mp = MultiPolygon(multiPolygon)
+	return nil
+}
+
+// UnmarshalBSON will unmarshal the GeoJSON MultiPolygon geometry.
+func (mp *MultiPolygon) UnmarshalBSON(data []byte) error {
+	g := &Geometry{}
+	err := bson.Unmarshal(data, &g)
+	if err != nil {
+		return err
+	}
+
+	multiPolygon, ok := g.Coordinates.(geo.MultiPolygon)
+	if !ok {
+		return errors.New("geojson: not a MultiPolygon type")
+	}
+
+	*mp = MultiPolygon(multiPolygon)
+	return nil
+}
+
+// Geometry will return the geo.Geometry version of the data.
+func (mp MultiPolygon) Geometry() geo.Geometry {
+	return geo.MultiPolygon(mp)
+}
