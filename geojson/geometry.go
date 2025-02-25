@@ -263,6 +263,10 @@ func (p Point) Geometry() geo.Geometry {
 	return geo.Point(p)
 }
 
+// MultiPoint is a helper type that
+// will marshal to/from a GeoJSON MultiPoint geometry.
+type MultiPoint geo.MultiPoint
+
 type geometryMarshallDoc struct {
 	Type        string       `json:"type" bson:"type"`
 	Coordinates geo.Geometry `json:"coordinates,omitempty" bson:"coordinates,omitempty"`
