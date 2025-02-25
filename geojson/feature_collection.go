@@ -150,6 +150,12 @@ func UnmarshalFeatureCollection(data []byte) (*FeatureCollection, error) {
 	return fc, nil
 }
 
+// Append appends a feature to the collection.
+func (fc *FeatureCollection) Append(feature *Feature) *FeatureCollection {
+	fc.Features = append(fc.Features, feature)
+	return fc
+}
+
 func newFeatureCollectionDoc(fc FeatureCollection) (temp map[string]interface{}) {
 	if fc.ExtraMembers != nil {
 		temp = fc.ExtraMembers.Clone()
