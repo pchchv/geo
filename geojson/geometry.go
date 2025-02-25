@@ -213,6 +213,17 @@ func (g *Geometry) UnmarshalBSON(data []byte) (err error) {
 // will marshal to/from a GeoJSON Point geometry.
 type Point geo.Point
 
+// MarshalJSON will convert the Point into a GeoJSON Point geometry.
+func (p Point) MarshalJSON() ([]byte, error) {
+	return marshalJSON(&Geometry{Coordinates: geo.Point(p)})
+}
+
+// MarshalBSON will convert the Point into a
+// BSON value following the GeoJSON Point structure.
+func (p Point) MarshalBSON() ([]byte, error) {
+	return bson.Marshal(&Geometry{Coordinates: geo.Point(p)})
+}
+
 type geometryMarshallDoc struct {
 	Type        string       `json:"type" bson:"type"`
 	Coordinates geo.Geometry `json:"coordinates,omitempty" bson:"coordinates,omitempty"`
