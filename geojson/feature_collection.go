@@ -139,6 +139,17 @@ func (fc *FeatureCollection) UnmarshalBSON(data []byte) (err error) {
 	return nil
 }
 
+// UnmarshalFeatureCollection decodes the data into a GeoJSON feature collection.
+// Alternately one can call json.Unmarshal(fc) directly for the same result.
+func UnmarshalFeatureCollection(data []byte) (*FeatureCollection, error) {
+	fc := &FeatureCollection{}
+	if err := fc.UnmarshalJSON(data); err != nil {
+		return nil, err
+	}
+
+	return fc, nil
+}
+
 func newFeatureCollectionDoc(fc FeatureCollection) (temp map[string]interface{}) {
 	if fc.ExtraMembers != nil {
 		temp = fc.ExtraMembers.Clone()
