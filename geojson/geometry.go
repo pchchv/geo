@@ -267,6 +267,16 @@ func (p Point) Geometry() geo.Geometry {
 // will marshal to/from a GeoJSON MultiPoint geometry.
 type MultiPoint geo.MultiPoint
 
+// MarshalJSON will convert the MultiPoint into a GeoJSON MultiPoint geometry.
+func (mp MultiPoint) MarshalJSON() ([]byte, error) {
+	return marshalJSON(&Geometry{Coordinates: geo.MultiPoint(mp)})
+}
+
+// MarshalBSON will convert the MultiPoint into a GeoJSON MultiPoint geometry BSON.
+func (mp MultiPoint) MarshalBSON() ([]byte, error) {
+	return bson.Marshal(&Geometry{Coordinates: geo.MultiPoint(mp)})
+}
+
 type geometryMarshallDoc struct {
 	Type        string       `json:"type" bson:"type"`
 	Coordinates geo.Geometry `json:"coordinates,omitempty" bson:"coordinates,omitempty"`
