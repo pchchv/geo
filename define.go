@@ -20,3 +20,14 @@ type Projection func(Point) Point
 
 // DistanceFunc computes the distance between two points.
 type DistanceFunc func(Point, Point) float64
+
+// Simplifier can simplify geometry.
+type Simplifier interface {
+	Simplify(g Geometry) Geometry
+	LineString(ls LineString) LineString
+	MultiLineString(mls MultiLineString) MultiLineString
+	Ring(r Ring) Ring
+	Polygon(p Polygon) Polygon
+	MultiPolygon(mp MultiPolygon) MultiPolygon
+	Collection(c Collection) Collection
+}
