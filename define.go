@@ -15,5 +15,8 @@ type Pointer interface {
 // Orientation defines the order of the points in a polygon or closed ring.
 type Orientation int8
 
-// Projection that moves a point from one space to another.
+// Projection moves a point from one space to another.
 type Projection func(Point) Point
+
+// DistanceFunc computes the distance between two points.
+type DistanceFunc func(Point, Point) float64
