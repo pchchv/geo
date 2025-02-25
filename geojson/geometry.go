@@ -311,6 +311,11 @@ func (mp *MultiPoint) UnmarshalBSON(data []byte) error {
 	return nil
 }
 
+// Geometry will return the geo.Geometry version of the data.
+func (mp MultiPoint) Geometry() geo.Geometry {
+	return geo.MultiPoint(mp)
+}
+
 type geometryMarshallDoc struct {
 	Type        string       `json:"type" bson:"type"`
 	Coordinates geo.Geometry `json:"coordinates,omitempty" bson:"coordinates,omitempty"`
