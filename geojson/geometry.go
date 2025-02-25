@@ -277,6 +277,40 @@ func (mp MultiPoint) MarshalBSON() ([]byte, error) {
 	return bson.Marshal(&Geometry{Coordinates: geo.MultiPoint(mp)})
 }
 
+// UnmarshalJSON will unmarshal the GeoJSON MultiPoint geometry.
+func (mp *MultiPoint) UnmarshalJSON(data []byte) error {
+	g := &Geometry{}
+	err := unmarshalJSON(data, &g)
+	if err != nil {
+		return err
+	}
+
+	multiPoint, ok := g.Coordinates.(geo.MultiPoint)
+	if !ok {
+		return errors.New("geojson: not a MultiPoint type")
+	}
+
+	*mp = MultiPoint(multiPoint)
+	return nil
+}
+
+// UnmarshalBSON will unmarshal the GeoJSON MultiPoint geometry.
+func (mp *MultiPoint) UnmarshalBSON(data []byte) error {
+	g := &Geometry{}
+	err := bson.Unmarshal(data, &g)
+	if err != nil {
+		return err
+	}
+
+	multiPoint, ok := g.Coordinates.(geo.MultiPoint)
+	if !ok {
+		return errors.New("geojson: not a MultiPoint type")
+	}
+
+	*mp = MultiPoint(multiPoint)
+	return nil
+}
+
 type geometryMarshallDoc struct {
 	Type        string       `json:"type" bson:"type"`
 	Coordinates geo.Geometry `json:"coordinates,omitempty" bson:"coordinates,omitempty"`
