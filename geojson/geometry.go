@@ -209,6 +209,10 @@ func (g *Geometry) UnmarshalBSON(data []byte) (err error) {
 	return nil
 }
 
+// Point is a helper type that
+// will marshal to/from a GeoJSON Point geometry.
+type Point geo.Point
+
 type geometryMarshallDoc struct {
 	Type        string       `json:"type" bson:"type"`
 	Coordinates geo.Geometry `json:"coordinates,omitempty" bson:"coordinates,omitempty"`
