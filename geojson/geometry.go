@@ -258,6 +258,11 @@ func (p *Point) UnmarshalBSON(data []byte) error {
 	return nil
 }
 
+// Geometry will return the geo.Geometry version of the data.
+func (p Point) Geometry() geo.Geometry {
+	return geo.Point(p)
+}
+
 type geometryMarshallDoc struct {
 	Type        string       `json:"type" bson:"type"`
 	Coordinates geo.Geometry `json:"coordinates,omitempty" bson:"coordinates,omitempty"`
