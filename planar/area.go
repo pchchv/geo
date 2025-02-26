@@ -177,3 +177,35 @@ func multiPolygonCentroidArea(mp geo.MultiPolygon) (point geo.Point, area float6
 	point[1] /= area
 	return
 }
+
+func collectionCentroidArea(c geo.Collection) (point geo.Point, area float64) {
+	max := maxDim(c)
+	for _, g := range c {
+		if g.Dimensions() != max {
+			continue
+		}
+
+		c, a := CentroidArea(g)
+		point[0] += c[0] * a
+		point[1] += c[1] * a
+		area += a
+	}
+
+	if area == 0 {
+		return geo.Point{}, 0
+	}
+
+	point[0] /= area
+	point[1] /= area
+	return
+}
+
+func maxDim(c geo.Collection) (max int) {
+	for _, g := range c {
+		if d := g.Dimensions(); d > max {
+			max = d
+		}
+	}
+
+	return
+}
