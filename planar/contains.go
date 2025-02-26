@@ -6,6 +6,30 @@ import (
 	"github.com/pchchv/geo"
 )
 
+// RingContains returns true if the point is inside the ring.
+// Points on the boundary are considered in.
+func RingContains(r geo.Ring, point geo.Point) bool {
+	if !r.Bound().Contains(point) {
+		return false
+	}
+
+	c, on := rayIntersect(point, r[0], r[len(r)-1])
+	if on {
+		return true
+	}
+
+	for i := 0; i < len(r)-1; i++ {
+		inter, on := rayIntersect(point, r[i], r[i+1])
+		if on {
+			return true
+		} else if inter {
+			c = !c
+		}
+	}
+
+	return c
+}
+
 func rayIntersect(p, s, e geo.Point) (intersects, on bool) {
 	if s[0] > e[0] {
 		s, e = e, s
