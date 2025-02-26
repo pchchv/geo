@@ -1,6 +1,10 @@
 package planar
 
-import "github.com/pchchv/geo"
+import (
+	"math"
+
+	"github.com/pchchv/geo"
+)
 
 func multiPointCentroid(mp geo.MultiPoint) geo.Point {
 	if len(mp) == 0 {
@@ -45,4 +49,40 @@ func ringCentroidArea(r geo.Ring) (centroid geo.Point, area float64) {
 	centroid[1] += offsetY
 
 	return centroid, area
+}
+
+func lineStringCentroidDist(ls geo.LineString) (geo.Point, float64) {
+	if len(ls) == 0 {
+		return geo.Point{}, math.Inf(1)
+	}
+
+	var dist float64
+	offset := ls[0] // implicitly move everything to near the origin to help with roundoff
+	point := geo.Point{}
+	for i := 0; i < len(ls)-1; i++ {
+		p1 := geo.Point{
+			ls[i][0] - offset[0],
+			ls[i][1] - offset[1],
+		}
+
+		p2 := geo.Point{
+			ls[i+1][0] - offset[0],
+			ls[i+1][1] - offset[1],
+		}
+
+		d := Distance(p1, p2)
+		point[0] += (p1[0] + p2[0]) / 2.0 * d
+		point[1] += (p1[1] + p2[1]) / 2.0 * d
+		dist += d
+	}
+
+	if dist == 0 {
+		return ls[0], 0
+	}
+
+	point[0] /= dist
+	point[1] /= dist
+	point[0] += ls[0][0]
+	point[1] += ls[0][1]
+	return point, dist
 }
