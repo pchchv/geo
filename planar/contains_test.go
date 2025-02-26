@@ -132,6 +132,30 @@ func TestPolygonContains(t *testing.T) {
 	}
 }
 
+func TestMultiPolygonContains(t *testing.T) {
+	// should exclude holes
+	mp := geo.MultiPolygon{
+		{{{0, 0}, {1, 0}, {1, 1}, {0, 1}, {0, 0}}},
+	}
+
+	if !MultiPolygonContains(mp, geo.Point{0.5, 0.5}) {
+		t.Errorf("should contain point")
+	}
+
+	if MultiPolygonContains(mp, geo.Point{1.5, 1.5}) {
+		t.Errorf("should not contain point")
+	}
+
+	mp = append(mp, geo.Polygon{{{2, 0}, {3, 0}, {3, 1}, {2, 1}, {2, 0}}})
+	if !MultiPolygonContains(mp, geo.Point{2.5, 0.5}) {
+		t.Errorf("should contain point")
+	}
+
+	if MultiPolygonContains(mp, geo.Point{1.5, 0.5}) {
+		t.Errorf("should not contain point")
+	}
+}
+
 func interpolate(a, b geo.Point, percent float64) geo.Point {
 	return geo.Point{
 		a[0] + percent*(b[0]-a[0]),
