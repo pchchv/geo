@@ -1,6 +1,10 @@
 package planar
 
-import "github.com/pchchv/geo"
+import (
+	"math"
+
+	"github.com/pchchv/geo"
+)
 
 // DistanceFromSegmentSquared returns point's squared distance from the segement [a, b].
 func DistanceFromSegmentSquared(a, b, point geo.Point) float64 {
@@ -22,4 +26,9 @@ func DistanceFromSegmentSquared(a, b, point geo.Point) float64 {
 	dx = point[0] - x
 	dy = point[1] - y
 	return dx*dx + dy*dy
+}
+
+// DistanceFromSegment returns the point's distance from the segment [a, b].
+func DistanceFromSegment(a, b, point geo.Point) float64 {
+	return math.Sqrt(DistanceFromSegmentSquared(a, b, point))
 }
