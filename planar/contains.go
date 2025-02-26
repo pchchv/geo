@@ -30,6 +30,22 @@ func RingContains(r geo.Ring, point geo.Point) bool {
 	return c
 }
 
+// PolygonContains checks if the point is within the polygon.
+// Points on the boundary are considered in.
+func PolygonContains(p geo.Polygon, point geo.Point) bool {
+	if !RingContains(p[0], point) {
+		return false
+	}
+
+	for i := 1; i < len(p); i++ {
+		if RingContains(p[i], point) {
+			return false
+		}
+	}
+
+	return true
+}
+
 func rayIntersect(p, s, e geo.Point) (intersects, on bool) {
 	if s[0] > e[0] {
 		s, e = e, s
