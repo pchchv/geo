@@ -55,3 +55,9 @@ func TestDistanceFromSegment(t *testing.T) {
 		})
 	}
 }
+
+func TestDistanceFromWithIndex(t *testing.T) {
+	for _, g := range geo.AllGeometries {
+		DistanceFromWithIndex(g, geo.Point{})
+	}
+}
