@@ -21,14 +21,13 @@ func multiPointCentroid(mp geo.MultiPoint) geo.Point {
 	return geo.Point{x / num, y / num}
 }
 
-func multiLineStringCentroid(mls geo.MultiLineString) geo.Point {
+func multiLineStringCentroid(mls geo.MultiLineString) (point geo.Point) {
 	if len(mls) == 0 {
 		return geo.Point{}
 	}
 
 	var dist float64
 	var validCount int
-	point := geo.Point{}
 	for _, ls := range mls {
 		c, d := lineStringCentroidDist(ls)
 		if d == math.Inf(1) {
@@ -52,12 +51,12 @@ func multiLineStringCentroid(mls geo.MultiLineString) geo.Point {
 	if dist == math.Inf(1) || dist == 0.0 {
 		point[0] /= float64(validCount)
 		point[1] /= float64(validCount)
-		return point
+		return
 	}
 
 	point[0] /= dist
 	point[1] /= dist
-	return point
+	return
 }
 
 func ringCentroidArea(r geo.Ring) (centroid geo.Point, area float64) {
@@ -90,14 +89,13 @@ func ringCentroidArea(r geo.Ring) (centroid geo.Point, area float64) {
 	return centroid, area
 }
 
-func lineStringCentroidDist(ls geo.LineString) (geo.Point, float64) {
+func lineStringCentroidDist(ls geo.LineString) (point geo.Point, dist float64) {
 	if len(ls) == 0 {
 		return geo.Point{}, math.Inf(1)
 	}
 
-	var dist float64
-	offset := ls[0] // implicitly move everything to near the origin to help with roundoff
-	point := geo.Point{}
+	// implicitly move everything to near the origin to help with roundoff
+	offset := ls[0]
 	for i := 0; i < len(ls)-1; i++ {
 		p1 := geo.Point{
 			ls[i][0] - offset[0],
@@ -123,7 +121,7 @@ func lineStringCentroidDist(ls geo.LineString) (geo.Point, float64) {
 	point[1] /= dist
 	point[0] += ls[0][0]
 	point[1] += ls[0][1]
-	return point, dist
+	return
 }
 
 func polygonCentroidArea(p geo.Polygon) (geo.Point, float64) {
@@ -163,9 +161,7 @@ func polygonCentroidArea(p geo.Polygon) (geo.Point, float64) {
 	return centroid, totalArea
 }
 
-func multiPolygonCentroidArea(mp geo.MultiPolygon) (geo.Point, float64) {
-	var area float64
-	point := geo.Point{}
+func multiPolygonCentroidArea(mp geo.MultiPolygon) (point geo.Point, area float64) {
 	for _, p := range mp {
 		c, a := polygonCentroidArea(p)
 		point[0] += c[0] * a
@@ -179,5 +175,5 @@ func multiPolygonCentroidArea(mp geo.MultiPolygon) (geo.Point, float64) {
 
 	point[0] /= area
 	point[1] /= area
-	return point, area
+	return
 }
