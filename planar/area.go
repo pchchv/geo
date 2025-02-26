@@ -21,6 +21,45 @@ func multiPointCentroid(mp geo.MultiPoint) geo.Point {
 	return geo.Point{x / num, y / num}
 }
 
+func multiLineStringCentroid(mls geo.MultiLineString) geo.Point {
+	if len(mls) == 0 {
+		return geo.Point{}
+	}
+
+	var dist float64
+	var validCount int
+	point := geo.Point{}
+	for _, ls := range mls {
+		c, d := lineStringCentroidDist(ls)
+		if d == math.Inf(1) {
+			continue
+		}
+
+		dist += d
+		validCount++
+		if d == 0 {
+			d = 1.0
+		}
+
+		point[0] += c[0] * d
+		point[1] += c[1] * d
+	}
+
+	if validCount == 0 {
+		return geo.Point{}
+	}
+
+	if dist == math.Inf(1) || dist == 0.0 {
+		point[0] /= float64(validCount)
+		point[1] /= float64(validCount)
+		return point
+	}
+
+	point[0] /= dist
+	point[1] /= dist
+	return point
+}
+
 func ringCentroidArea(r geo.Ring) (centroid geo.Point, area float64) {
 	if len(r) == 0 {
 		return geo.Point{}, 0
@@ -85,4 +124,41 @@ func lineStringCentroidDist(ls geo.LineString) (geo.Point, float64) {
 	point[0] += ls[0][0]
 	point[1] += ls[0][1]
 	return point, dist
+}
+
+func polygonCentroidArea(p geo.Polygon) (geo.Point, float64) {
+	if len(p) == 0 {
+		return geo.Point{}, 0
+	}
+
+	centroid, area := ringCentroidArea(p[0])
+	area = math.Abs(area)
+	if len(p) == 1 {
+		if area == 0 {
+			c, _ := lineStringCentroidDist(geo.LineString(p[0]))
+			return c, 0
+		}
+		return centroid, area
+	}
+
+	var holeArea float64
+	weightedHoleCentroid := geo.Point{}
+	for i := 1; i < len(p); i++ {
+		hc, ha := ringCentroidArea(p[i])
+		ha = math.Abs(ha)
+
+		holeArea += ha
+		weightedHoleCentroid[0] += hc[0] * ha
+		weightedHoleCentroid[1] += hc[1] * ha
+	}
+
+	totalArea := area - holeArea
+	if totalArea == 0 {
+		c, _ := lineStringCentroidDist(geo.LineString(p[0]))
+		return c, 0
+	}
+
+	centroid[0] = (area*centroid[0] - weightedHoleCentroid[0]) / totalArea
+	centroid[1] = (area*centroid[1] - weightedHoleCentroid[1]) / totalArea
+	return centroid, totalArea
 }
