@@ -7,6 +7,13 @@ import (
 	"github.com/pchchv/geo"
 )
 
+// DistanceFrom returns the distance from the
+// boundary of the geometry in the units of the geometry.
+func DistanceFrom(g geo.Geometry, p geo.Point) float64 {
+	d, _ := DistanceFromWithIndex(g, p)
+	return d
+}
+
 // DistanceFromSegmentSquared returns point's squared distance from the segement [a, b].
 func DistanceFromSegmentSquared(a, b, point geo.Point) float64 {
 	return segmentDistanceFromSquared(a, b, point)
