@@ -46,6 +46,18 @@ func PolygonContains(p geo.Polygon, point geo.Point) bool {
 	return true
 }
 
+// MultiPolygonContains checks if the point is within the multi-polygon.
+// Points on the boundary are considered in.
+func MultiPolygonContains(mp geo.MultiPolygon, point geo.Point) bool {
+	for _, p := range mp {
+		if PolygonContains(p, point) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func rayIntersect(p, s, e geo.Point) (intersects, on bool) {
 	if s[0] > e[0] {
 		s, e = e, s
