@@ -62,3 +62,20 @@ func lineStringDistanceFrom(ls geo.LineString, p geo.Point) (float64, int) {
 
 	return math.Sqrt(dist), index
 }
+
+func polygonDistanceFrom(p geo.Polygon, point geo.Point) (float64, int) {
+	if len(p) == 0 {
+		return math.Inf(1), -1
+	}
+
+	dist, index := lineStringDistanceFrom(geo.LineString(p[0]), point)
+	for i := 1; i < len(p); i++ {
+		d, i := lineStringDistanceFrom(geo.LineString(p[i]), point)
+		if d < dist {
+			dist = d
+			index = i
+		}
+	}
+
+	return dist, index
+}
