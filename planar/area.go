@@ -1,10 +1,42 @@
 package planar
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/pchchv/geo"
 )
+
+// CentroidArea returns the centroid and the area in the 2d plane.
+// Since area is needed for the centroid, returns both values.
+// Polygon area will always be >= zero.
+// Ring area can be negative if it is wound clockwise.
+func CentroidArea(g geo.Geometry) (geo.Point, float64) {
+	switch g := g.(type) {
+	case nil:
+		return geo.Point{}, 0
+	case geo.Point:
+		return multiPointCentroid(geo.MultiPoint{g}), 0
+	case geo.MultiPoint:
+		return multiPointCentroid(g), 0
+	case geo.LineString:
+		return multiLineStringCentroid(geo.MultiLineString{g}), 0
+	case geo.MultiLineString:
+		return multiLineStringCentroid(g), 0
+	case geo.Ring:
+		return ringCentroidArea(g)
+	case geo.Polygon:
+		return polygonCentroidArea(g)
+	case geo.MultiPolygon:
+		return multiPolygonCentroidArea(g)
+	case geo.Collection:
+		return collectionCentroidArea(g)
+	case geo.Bound:
+		return CentroidArea(g.ToRing())
+	default:
+		panic(fmt.Sprintf("geometry type not supported: %T", g))
+	}
+}
 
 func multiPointCentroid(mp geo.MultiPoint) geo.Point {
 	if len(mp) == 0 {
