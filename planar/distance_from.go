@@ -36,3 +36,29 @@ func segmentDistanceFromSquared(p1, p2, point geo.Point) float64 {
 	dy = point[1] - y
 	return dx*dx + dy*dy
 }
+
+func multiPointDistanceFrom(mp geo.MultiPoint, p geo.Point) (float64, int) {
+	index := -1
+	dist := math.Inf(1)
+	for i := range mp {
+		if d := DistanceSquared(mp[i], p); d < dist {
+			dist = d
+			index = i
+		}
+	}
+
+	return math.Sqrt(dist), index
+}
+
+func lineStringDistanceFrom(ls geo.LineString, p geo.Point) (float64, int) {
+	index := -1
+	dist := math.Inf(1)
+	for i := 0; i < len(ls)-1; i++ {
+		if d := segmentDistanceFromSquared(ls[i], ls[i+1], p); d < dist {
+			dist = d
+			index = i
+		}
+	}
+
+	return math.Sqrt(dist), index
+}
