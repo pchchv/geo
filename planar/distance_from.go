@@ -32,3 +32,24 @@ func DistanceFromSegmentSquared(a, b, point geo.Point) float64 {
 func DistanceFromSegment(a, b, point geo.Point) float64 {
 	return math.Sqrt(DistanceFromSegmentSquared(a, b, point))
 }
+
+func segmentDistanceFromSquared(p1, p2, point geo.Point) float64 {
+	x := p1[0]
+	y := p1[1]
+	dx := p2[0] - x
+	dy := p2[1] - y
+	if dx != 0 || dy != 0 {
+		t := ((point[0]-x)*dx + (point[1]-y)*dy) / (dx*dx + dy*dy)
+		if t > 1 {
+			x = p2[0]
+			y = p2[1]
+		} else if t > 0 {
+			x += dx * t
+			y += dy * t
+		}
+	}
+
+	dx = point[0] - x
+	dy = point[1] - y
+	return dx*dx + dy*dy
+}
