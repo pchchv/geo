@@ -1,0 +1,66 @@
+package planar
+
+import (
+	"math"
+
+	"github.com/pchchv/geo"
+)
+
+func rayIntersect(p, s, e geo.Point) (intersects, on bool) {
+	if s[0] > e[0] {
+		s, e = e, s
+	}
+
+	if p[0] == s[0] {
+		if p[1] == s[1] {
+			return false, true
+		} else if s[0] == e[0] {
+			// vertical segment (s -> e)
+			// return true if within the line, check to see if start or end is greater.
+			if s[1] > e[1] && s[1] >= p[1] && p[1] >= e[1] {
+				return false, true
+			}
+
+			if e[1] > s[1] && e[1] >= p[1] && p[1] >= s[1] {
+				return false, true
+			}
+		}
+
+		// move the y coordinate to deal with degenerate case
+		p[0] = math.Nextafter(p[0], math.Inf(1))
+	} else if p[0] == e[0] {
+		if p[1] == e[1] {
+			// matching the end point
+			return false, true
+		}
+
+		p[0] = math.Nextafter(p[0], math.Inf(1))
+	}
+
+	if p[0] < s[0] || p[0] > e[0] {
+		return false, false
+	}
+
+	if s[1] > e[1] {
+		if p[1] > s[1] {
+			return false, false
+		} else if p[1] < e[1] {
+			return true, false
+		}
+	} else {
+		if p[1] > e[1] {
+			return false, false
+		} else if p[1] < s[1] {
+			return true, false
+		}
+	}
+
+	rs := (p[1] - s[1]) / (p[0] - s[0])
+	ds := (e[1] - s[1]) / (e[0] - s[0])
+
+	if rs == ds {
+		return false, true
+	}
+
+	return rs <= ds, false
+}
