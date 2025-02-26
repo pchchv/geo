@@ -1,6 +1,7 @@
 package planar
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/pchchv/geo"
@@ -14,6 +15,59 @@ func DistanceFromSegmentSquared(a, b, point geo.Point) float64 {
 // DistanceFromSegment returns the point's distance from the segment [a, b].
 func DistanceFromSegment(a, b, point geo.Point) float64 {
 	return math.Sqrt(DistanceFromSegmentSquared(a, b, point))
+}
+
+// DistanceFromWithIndex returns theminimum euclidean distance from the
+// boundary of the geometry plus the index of the sub-geometry that was the match.
+func DistanceFromWithIndex(g geo.Geometry, p geo.Point) (float64, int) {
+	switch g := g.(type) {
+	case nil:
+		return math.Inf(1), -1
+	case geo.Point:
+		return Distance(g, p), 0
+	case geo.MultiPoint:
+		return multiPointDistanceFrom(g, p)
+	case geo.LineString:
+		return lineStringDistanceFrom(g, p)
+	case geo.MultiLineString:
+		index := -1
+		dist := math.Inf(1)
+		for i, ls := range g {
+			if d, _ := lineStringDistanceFrom(ls, p); d < dist {
+				dist = d
+				index = i
+			}
+		}
+		return dist, index
+	case geo.Ring:
+		return lineStringDistanceFrom(geo.LineString(g), p)
+	case geo.Polygon:
+		return polygonDistanceFrom(g, p)
+	case geo.MultiPolygon:
+		index := -1
+		dist := math.Inf(1)
+		for i, poly := range g {
+			if d, _ := polygonDistanceFrom(poly, p); d < dist {
+				dist = d
+				index = i
+			}
+		}
+		return dist, index
+	case geo.Collection:
+		index := -1
+		dist := math.Inf(1)
+		for i, ge := range g {
+			if d, _ := DistanceFromWithIndex(ge, p); d < dist {
+				dist = d
+				index = i
+			}
+		}
+		return dist, index
+	case geo.Bound:
+		return DistanceFromWithIndex(g.ToRing(), p)
+	default:
+		panic(fmt.Sprintf("geometry type not supported: %T", g))
+	}
 }
 
 func segmentDistanceFromSquared(p1, p2, point geo.Point) float64 {
