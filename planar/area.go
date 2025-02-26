@@ -38,6 +38,14 @@ func CentroidArea(g geo.Geometry) (geo.Point, float64) {
 	}
 }
 
+// Area returns the area of the geometry in the 2d plane.
+// Needs to be finalized:
+// want to implement area calculation without centroid calculation.
+func Area(g geo.Geometry) float64 {
+	_, a := CentroidArea(g)
+	return a
+}
+
 func multiPointCentroid(mp geo.MultiPoint) geo.Point {
 	if len(mp) == 0 {
 		return geo.Point{}
