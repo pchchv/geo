@@ -162,3 +162,22 @@ func polygonCentroidArea(p geo.Polygon) (geo.Point, float64) {
 	centroid[1] = (area*centroid[1] - weightedHoleCentroid[1]) / totalArea
 	return centroid, totalArea
 }
+
+func multiPolygonCentroidArea(mp geo.MultiPolygon) (geo.Point, float64) {
+	var area float64
+	point := geo.Point{}
+	for _, p := range mp {
+		c, a := polygonCentroidArea(p)
+		point[0] += c[0] * a
+		point[1] += c[1] * a
+		area += a
+	}
+
+	if area == 0 {
+		return geo.Point{}, 0
+	}
+
+	point[0] /= area
+	point[1] /= area
+	return point, area
+}
