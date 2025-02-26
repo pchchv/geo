@@ -110,6 +110,28 @@ func TestRingContains(t *testing.T) {
 	}
 }
 
+func TestPolygonContains(t *testing.T) {
+	// should exclude holes
+	p := geo.Polygon{
+		{{0, 0}, {3, 0}, {3, 3}, {0, 3}, {0, 0}},
+	}
+
+	if !PolygonContains(p, geo.Point{1.5, 1.5}) {
+		t.Errorf("should contain point")
+	}
+
+	// ring oriented same as outer ring
+	p = append(p, geo.Ring{{1, 1}, {2, 1}, {2, 2}, {1, 2}, {1, 1}})
+	if PolygonContains(p, geo.Point{1.5, 1.5}) {
+		t.Errorf("should not contain point in hole")
+	}
+
+	p[1].Reverse() // oriented correctly as opposite of outer
+	if PolygonContains(p, geo.Point{1.5, 1.5}) {
+		t.Errorf("should not contain point in hole")
+	}
+}
+
 func interpolate(a, b geo.Point, percent float64) geo.Point {
 	return geo.Point{
 		a[0] + percent*(b[0]-a[0]),
