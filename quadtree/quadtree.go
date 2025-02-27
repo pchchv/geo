@@ -86,3 +86,15 @@ func (v *findVisitor) Bound() *geo.Bound {
 func (v *findVisitor) Point() geo.Point {
 	return v.point
 }
+
+func childIndex(cx, cy float64, point geo.Point) (i int) {
+	if point[1] <= cy {
+		i = 2
+	}
+
+	if point[0] >= cx {
+		i++
+	}
+
+	return
+}
