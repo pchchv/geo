@@ -70,3 +70,59 @@ func TestQuadtreeFind_Random(t *testing.T) {
 		}
 	}
 }
+
+func TestQuadtreeMatching(t *testing.T) {
+	type dataPointer struct {
+		geo.Pointer
+		visible bool
+	}
+
+	qt := New(geo.Bound{Min: geo.Point{0, 0}, Max: geo.Point{1, 1}})
+	if err := qt.Add(dataPointer{geo.Point{0, 0}, false}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := qt.Add(dataPointer{geo.Point{1, 1}, true}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	cases := []struct {
+		name     string
+		filter   FilterFunc
+		point    geo.Point
+		expected geo.Pointer
+	}{
+		{
+			name:     "no filtred",
+			point:    geo.Point{0.1, 0.1},
+			expected: geo.Point{0, 0},
+		},
+		{
+			name:     "with filter",
+			filter:   func(p geo.Pointer) bool { return p.(dataPointer).visible },
+			point:    geo.Point{0.1, 0.1},
+			expected: geo.Point{1, 1},
+		},
+		{
+			name:     "match none filter",
+			filter:   func(p geo.Pointer) bool { return false },
+			point:    geo.Point{0.1, 0.1},
+			expected: nil,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			v := qt.Matching(tc.point, tc.filter)
+			// case 1: exact match, important for testing `nil`
+			if v == tc.expected {
+				return
+			}
+
+			// case 2: match on returned geo.Point value
+			if !v.Point().Equal(tc.expected.Point()) {
+				t.Errorf("incorrect point %v != %v", v, tc.expected)
+			}
+		})
+	}
+}
