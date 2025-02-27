@@ -2,6 +2,8 @@ package quadtree
 
 import (
 	"math/rand"
+	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/pchchv/geo"
@@ -126,3 +128,107 @@ func TestQuadtreeMatching(t *testing.T) {
 		})
 	}
 }
+
+func TestQuadtreeInBoundMatching(t *testing.T) {
+	type dataPointer struct {
+		geo.Pointer
+		visible bool
+	}
+
+	q := New(geo.Bound{Max: geo.Point{5, 5}})
+	pointers := []dataPointer{
+		{geo.Point{0, 0}, false},
+		{geo.Point{1, 1}, true},
+		{geo.Point{2, 2}, false},
+		{geo.Point{3, 3}, true},
+		{geo.Point{4, 4}, false},
+		{geo.Point{5, 5}, true},
+	}
+	for _, p := range pointers {
+		if err := q.Add(p); err != nil {
+			t.Fatalf("unexpected error for %v: %v", p, err)
+		}
+	}
+
+	filters := map[bool]FilterFunc{
+		false: nil,
+		true:  func(p geo.Pointer) bool { return p.(dataPointer).visible },
+	}
+
+	cases := []struct {
+		name     string
+		filtered bool
+		expected []geo.Point
+	}{
+		{
+			name:     "unfiltered",
+			filtered: false,
+			expected: []geo.Point{{0, 0}, {1, 1}, {2, 2}},
+		},
+		{
+			name:     "filtered",
+			filtered: true,
+			expected: []geo.Point{{1, 1}},
+		},
+	}
+
+	var v []geo.Pointer
+	bound := geo.Bound{Min: geo.Point{0, 0}, Max: geo.Point{2, 2}}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			v = q.InBoundMatching(v, bound, filters[tc.filtered])
+			if len(v) != len(tc.expected) {
+				t.Errorf("incorrect response length: %d != %d", len(v), len(tc.expected))
+			}
+
+			result := make([]geo.Point, 0)
+			for _, p := range v {
+				result = append(result, p.Point())
+			}
+
+			sort.Slice(result, func(i, j int) bool {
+				return result[i][0] < result[j][0]
+			})
+
+			sort.Slice(tc.expected, func(i, j int) bool {
+				return tc.expected[i][0] < tc.expected[j][0]
+			})
+
+			if !reflect.DeepEqual(result, tc.expected) {
+				t.Log(result)
+				t.Log(tc.expected)
+				t.Errorf("incorrect results")
+			}
+		})
+	}
+}
+
+func TestQuadtreeInBound_Random(t *testing.T) {
+	mp := geo.MultiPoint{}
+	r := rand.New(rand.NewSource(43))
+	qt := New(geo.Bound{Min: geo.Point{0, 0}, Max: geo.Point{1, 1}})
+	for i := 0; i < 1000; i++ {
+		mp = append(mp, geo.Point{r.Float64(), r.Float64()})
+		if err := qt.Add(mp[i]); err != nil {
+			t.Fatalf("unexpected error for %v: %v", mp[i], err)
+		}
+	}
+
+	for i := 0; i < 1000; i++ {
+		p := geo.Point{r.Float64(), r.Float64()}
+		b := geo.Bound{Min: p, Max: p}
+		b = b.Pad(0.1)
+		ps := qt.InBound(nil, b)
+
+		// find the right answer brute force
+		var list []geo.Pointer
+		for _, p := range mp {
+			if b.Contains(p) {
+				list = append(list, p)
+			}
+		}
+
+		if len(list) != len(ps) {
+			t.Errorf("index: %d, lengths not equal %v != %v", i, len(list), len(ps))
+		}
+	}
