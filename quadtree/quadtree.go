@@ -56,3 +56,11 @@ func (v *findVisitor) Visit(n *node) {
 		v.closestBound.Max[1] = v.point[1] + d
 	}
 }
+
+func (v *findVisitor) Bound() *geo.Bound {
+	return v.closestBound
+}
+
+func (v *findVisitor) Point() geo.Point {
+	return v.point
+}
