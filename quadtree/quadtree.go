@@ -10,13 +10,6 @@ import (
 // FilterFunc is a function that filters the points to search for.
 type FilterFunc func(p geo.Pointer) bool
 
-// node represents a node of the quad tree.
-// Each node stores a Value and has links to its 4 children.
-type node struct {
-	Value    geo.Pointer
-	Children [4]*node
-}
-
 // Quadtree implements a two-dimensional recursive
 // spatial subdivision of geo.Pointers.
 // This implementation uses rectangular partitions.
@@ -31,15 +24,20 @@ func New(bound geo.Bound) *Quadtree {
 	return &Quadtree{bound: bound}
 }
 
+// node represents a node of the quad tree.
+// Each node stores a Value and has links to its 4 children.
+type node struct {
+	Value    geo.Pointer
+	Children [4]*node
+}
+
 type visitor interface {
-	// Bound returns the current relevant bound so we can prune irrelevant nodes
-	// from the search. Using a pointer was benchmarked to be 5% faster than
-	// having to copy the bound on return. go1.9
+	// Bound returns the current relevant bound so that it is possible to drop irrelevant nodes from the search.
 	Bound() *geo.Bound
 	Visit(n *node)
-	// Point should return the specific point being search for, or null if there
-	// isn't one (ie. searching by bound). This helps guide the search to the
-	// best child node first.
+	// Point returns the specific point searched for,
+	// or null if none exists (i.e. boundary search).
+	// This helps guide the search to the best child node first.
 	Point() geo.Point
 }
 
