@@ -166,6 +166,21 @@ type inBoundVisitor struct {
 	filter   FilterFunc
 }
 
+func (v *inBoundVisitor) Visit(n *node) {
+	if v.filter != nil && !v.filter(n.Value) {
+		return
+	}
+
+	p := n.Value.Point()
+	if v.bound.Min[0] > p[0] || v.bound.Max[0] < p[0] ||
+		v.bound.Min[1] > p[1] || v.bound.Max[1] < p[1] {
+		return
+
+	}
+
+	v.pointers = append(v.pointers, n.Value)
+}
+
 func childIndex(cx, cy float64, point geo.Point) (i int) {
 	if point[1] <= cy {
 		i = 2
