@@ -1,6 +1,7 @@
 package quadtree
 
 import (
+	"errors"
 	"math"
 
 	"github.com/pchchv/geo"
@@ -96,6 +97,36 @@ func (q *Quadtree) Bound() geo.Bound {
 // Multiple goroutines can read from a pre-created tree.
 func (q *Quadtree) InBound(buf []geo.Pointer, b geo.Bound) []geo.Pointer {
 	return q.InBoundMatching(buf, b, nil)
+}
+
+// Add puts an object into the quad tree,
+// must be within the quadtree bounds.
+// This function is not thread-safe,
+// ie. multiple goroutines cannot insert into a single quadtree.
+func (q *Quadtree) Add(p geo.Pointer) error {
+	if p == nil {
+		return nil
+	}
+
+	point := p.Point()
+	if !q.bound.Contains(point) {
+		// point is outside the bounds used to create the tree
+		return errors.New("quadtree: point outside of bounds")
+	}
+
+	if q.root == nil {
+		q.root = &node{
+			Value: p,
+		}
+		return nil
+	} else if q.root.Value == nil {
+		q.root.Value = p
+		return nil
+	}
+
+	q.add(q.root, p, p.Point(), q.bound.Min[0], q.bound.Max[0], q.bound.Min[1], q.bound.Max[1])
+
+	return nil
 }
 
 // add is the recursive search to find a place to add the point.
