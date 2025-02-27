@@ -25,3 +25,11 @@ type Quadtree struct {
 func New(bound geo.Bound) *Quadtree {
 	return &Quadtree{bound: bound}
 }
+
+type findVisitor struct {
+	point          geo.Point
+	filter         FilterFunc
+	closest        *node
+	closestBound   *geo.Bound
+	minDistSquared float64
+}
