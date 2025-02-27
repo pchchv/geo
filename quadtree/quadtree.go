@@ -1,6 +1,11 @@
 package quadtree
 
-import "github.com/pchchv/geo"
+import (
+	"math"
+
+	"github.com/pchchv/geo"
+	"github.com/pchchv/geo/planar"
+)
 
 // FilterFunc is a function that filters the points to search for.
 type FilterFunc func(p geo.Pointer) bool
@@ -32,4 +37,22 @@ type findVisitor struct {
 	closest        *node
 	closestBound   *geo.Bound
 	minDistSquared float64
+}
+
+func (v *findVisitor) Visit(n *node) {
+	// skip this pointer if we have a filter and it doesn't match
+	if v.filter != nil && !v.filter(n.Value) {
+		return
+	}
+
+	point := n.Value.Point()
+	if d := planar.DistanceSquared(point, v.point); d < v.minDistSquared {
+		v.minDistSquared = d
+		v.closest = n
+		d = math.Sqrt(d)
+		v.closestBound.Min[0] = v.point[0] - d
+		v.closestBound.Max[0] = v.point[0] + d
+		v.closestBound.Min[1] = v.point[1] - d
+		v.closestBound.Max[1] = v.point[1] + d
+	}
 }
