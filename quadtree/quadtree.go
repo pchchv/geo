@@ -48,18 +48,39 @@ func (q *Quadtree) Matching(p geo.Point, f FilterFunc) geo.Pointer {
 		minDistSquared: math.MaxFloat64,
 	}
 
-	newVisit(v).Visit(q.root,
-		// q.bound.Left(), q.bound.Right(),
-		// q.bound.Bottom(), q.bound.Top(),
-		q.bound.Min[0], q.bound.Max[0],
-		q.bound.Min[1], q.bound.Max[1],
-	)
+	newVisit(v).Visit(q.root, q.bound.Min[0], q.bound.Max[0], q.bound.Min[1], q.bound.Max[1])
 
 	if v.closest == nil {
 		return nil
 	}
 
 	return v.closest.Value
+}
+
+// InBoundMatching returns a slice with all the pointers in the quadtree that are
+// within the given bound and matching the give filter function.
+// An optional buffer parameter is provided to
+// allow for the reuse of result slice memory.
+// This function is thread safe.
+// Multiple goroutines can read from a pre-created tree.
+func (q *Quadtree) InBoundMatching(buf []geo.Pointer, b geo.Bound, f FilterFunc) (p []geo.Pointer) {
+	if q.root == nil {
+		return nil
+	}
+
+	if buf != nil {
+		p = buf[:0]
+	}
+
+	v := &inBoundVisitor{
+		bound:    &b,
+		pointers: p,
+		filter:   f,
+	}
+
+	newVisit(v).Visit(q.root, q.bound.Min[0], q.bound.Max[0], q.bound.Min[1], q.bound.Max[1])
+
+	return v.pointers
 }
 
 // node represents a node of the quad tree.
