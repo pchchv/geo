@@ -98,6 +98,37 @@ func (q *Quadtree) InBound(buf []geo.Pointer, b geo.Bound) []geo.Pointer {
 	return q.InBoundMatching(buf, b, nil)
 }
 
+// add is the recursive search to find a place to add the point.
+func (q *Quadtree) add(n *node, p geo.Pointer, point geo.Point, left, right, bottom, top float64) {
+	var i int
+	// figure which child of this internal node the point is in
+	if cy := (bottom + top) / 2.0; point[1] <= cy {
+		top = cy
+		i = 2
+	} else {
+		bottom = cy
+	}
+
+	if cx := (left + right) / 2.0; point[0] >= cx {
+		left = cx
+		i++
+	} else {
+		right = cx
+	}
+
+	if n.Children[i] == nil {
+		n.Children[i] = &node{Value: p}
+		return
+	} else if n.Children[i].Value == nil {
+		n.Children[i].Value = p
+		return
+	}
+
+	// proceed down to the child to see if it's a
+	// leaf yet and can add the pointer there
+	q.add(n.Children[i], p, point, left, right, bottom, top)
+}
+
 // node represents a node of the quad tree.
 // Each node stores a Value and has links to its 4 children.
 type node struct {
