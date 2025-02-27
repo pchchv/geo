@@ -24,6 +24,44 @@ func New(bound geo.Bound) *Quadtree {
 	return &Quadtree{bound: bound}
 }
 
+// Find returns the closest Value/Pointer in the quadtree.
+// This function is thread safe.
+// Multiple goroutines can read from a pre-created tree.
+func (q *Quadtree) Find(p geo.Point) geo.Pointer {
+	return q.Matching(p, nil)
+}
+
+// Matching returns the closest Value/Pointer in the
+// quadtree for which the given filter function returns true.
+// This function is thread safe.
+// Multiple goroutines can read from a pre-created tree.
+func (q *Quadtree) Matching(p geo.Point, f FilterFunc) geo.Pointer {
+	if q.root == nil {
+		return nil
+	}
+
+	b := q.bound
+	v := &findVisitor{
+		point:          p,
+		filter:         f,
+		closestBound:   &b,
+		minDistSquared: math.MaxFloat64,
+	}
+
+	newVisit(v).Visit(q.root,
+		// q.bound.Left(), q.bound.Right(),
+		// q.bound.Bottom(), q.bound.Top(),
+		q.bound.Min[0], q.bound.Max[0],
+		q.bound.Min[1], q.bound.Max[1],
+	)
+
+	if v.closest == nil {
+		return nil
+	}
+
+	return v.closest.Value
+}
+
 // node represents a node of the quad tree.
 // Each node stores a Value and has links to its 4 children.
 type node struct {
