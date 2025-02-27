@@ -160,6 +160,12 @@ func (v *findVisitor) Point() geo.Point {
 	return v.point
 }
 
+type inBoundVisitor struct {
+	bound    *geo.Bound
+	pointers []geo.Pointer
+	filter   FilterFunc
+}
+
 func childIndex(cx, cy float64, point geo.Point) (i int) {
 	if point[1] <= cy {
 		i = 2
