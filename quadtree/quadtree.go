@@ -31,6 +31,18 @@ func New(bound geo.Bound) *Quadtree {
 	return &Quadtree{bound: bound}
 }
 
+type visitor interface {
+	// Bound returns the current relevant bound so we can prune irrelevant nodes
+	// from the search. Using a pointer was benchmarked to be 5% faster than
+	// having to copy the bound on return. go1.9
+	Bound() *geo.Bound
+	Visit(n *node)
+	// Point should return the specific point being search for, or null if there
+	// isn't one (ie. searching by bound). This helps guide the search to the
+	// best child node first.
+	Point() geo.Point
+}
+
 type findVisitor struct {
 	point          geo.Point
 	filter         FilterFunc
