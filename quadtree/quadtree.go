@@ -83,6 +83,21 @@ func (q *Quadtree) InBoundMatching(buf []geo.Pointer, b geo.Bound, f FilterFunc)
 	return v.pointers
 }
 
+// Bound returns the bounds used for the quad tree.
+func (q *Quadtree) Bound() geo.Bound {
+	return q.bound
+}
+
+// InBound returns a slice with all the pointers in the
+// quadtree that are within the given bound.
+// An optional buffer parameter is provided to allow
+// for the reuse of result slice memory.
+// This function is thread safe.
+// Multiple goroutines can read from a pre-created tree.
+func (q *Quadtree) InBound(buf []geo.Pointer, b geo.Bound) []geo.Pointer {
+	return q.InBoundMatching(buf, b, nil)
+}
+
 // node represents a node of the quad tree.
 // Each node stores a Value and has links to its 4 children.
 type node struct {
