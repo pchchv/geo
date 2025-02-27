@@ -11,3 +11,17 @@ type node struct {
 	Value    geo.Pointer
 	Children [4]*node
 }
+
+// Quadtree implements a two-dimensional recursive
+// spatial subdivision of geo.Pointers.
+// This implementation uses rectangular partitions.
+type Quadtree struct {
+	bound geo.Bound
+	root  *node
+}
+
+// New creates a new quadtree for the given bound.
+// Added points must be within this bound.
+func New(bound geo.Bound) *Quadtree {
+	return &Quadtree{bound: bound}
+}
