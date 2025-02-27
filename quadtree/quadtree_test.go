@@ -232,3 +232,15 @@ func TestQuadtreeInBound_Random(t *testing.T) {
 			t.Errorf("index: %d, lengths not equal %v != %v", i, len(list), len(ps))
 		}
 	}
+}
+
+func TestQuadtreeAdd(t *testing.T) {
+	p := geo.Point{}
+	qt := New(geo.Bound{Min: geo.Point{0, 0}, Max: geo.Point{1, 1}})
+	for i := 0; i < 10; i++ {
+		// should be able to insert the same point over and over.
+		if err := qt.Add(p); err != nil {
+			t.Fatalf("unexpected error for %v: %v", p, err)
+		}
+	}
+}
