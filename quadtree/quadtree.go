@@ -43,6 +43,18 @@ type visitor interface {
 	Point() geo.Point
 }
 
+// visit provides a framework for walking the quad tree.
+// Currently used by the `Find` and `InBound` functions.
+type visit struct {
+	visitor visitor
+}
+
+func newVisit(v visitor) *visit {
+	return &visit{
+		visitor: v,
+	}
+}
+
 type findVisitor struct {
 	point          geo.Point
 	filter         FilterFunc
