@@ -7,6 +7,7 @@ import (
 
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/geojson"
+	"github.com/pchchv/geo/quadtree"
 )
 
 func ExampleFeatureCollection_foreignMembers() {
@@ -162,4 +163,22 @@ func ExampleFeatureCollection_MarshalJSON() {
 	//  ],
 	//  "type": "FeatureCollection"
 	// }
+}
+
+func ExampleFeature_Point() {
+	f := geojson.NewFeature(geo.Point{1, 1})
+	f.Properties["key"] = "value"
+	qt := quadtree.New(f.Geometry.Bound().Pad(1))
+	if err := qt.Add(f); err != nil {
+		// add the feature to a quadtree
+		log.Fatalf("unexpected error: %e", err)
+	}
+
+	// type assert the feature back into a Feature from
+	// the geo.Pointer interface.
+	feature := qt.Find(geo.Point{0, 0}).(*geojson.Feature)
+	fmt.Printf("key=%s", feature.Properties["key"])
+
+	// Output:
+	// key=value
 }
