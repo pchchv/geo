@@ -53,6 +53,41 @@ func newVisit(v visitor) *visit {
 	}
 }
 
+func (v *visit) Visit(n *node, left, right, bottom, top float64) {
+	b := v.visitor.Bound()
+	if left > b.Max[0] || right < b.Min[0] || bottom > b.Max[1] || top < b.Min[1] {
+		return
+	}
+
+	if n.Value != nil {
+		v.visitor.Visit(n)
+	}
+
+	if n.Children[0] == nil && n.Children[1] == nil && n.Children[2] == nil && n.Children[3] == nil {
+		// no children check
+		return
+	}
+
+	cx := (left + right) / 2.0
+	cy := (bottom + top) / 2.0
+	i := childIndex(cx, cy, v.visitor.Point())
+	for j := i; j < i+4; j++ {
+		if n.Children[j%4] == nil {
+			continue
+		}
+
+		if k := j % 4; k == 0 {
+			v.Visit(n.Children[0], left, cx, cy, top)
+		} else if k == 1 {
+			v.Visit(n.Children[1], cx, right, cy, top)
+		} else if k == 2 {
+			v.Visit(n.Children[2], left, cx, bottom, cy)
+		} else if k == 3 {
+			v.Visit(n.Children[3], cx, right, bottom, cy)
+		}
+	}
+}
+
 type findVisitor struct {
 	point          geo.Point
 	filter         FilterFunc
