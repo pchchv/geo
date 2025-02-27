@@ -29,3 +29,18 @@ func ExampleDistance() {
 	// Output:
 	// 5
 }
+
+func ExampleLength() {
+	// +
+	// |\
+	// | \
+	// |  \
+	// +---+
+
+	r := geo.Ring{{0, 0}, {3, 0}, {0, 4}, {0, 0}}
+	l := planar.Length(r)
+
+	fmt.Println(l)
+	// Output:
+	// 12
+}
