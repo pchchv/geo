@@ -129,6 +129,47 @@ func (q *Quadtree) Add(p geo.Pointer) error {
 	return nil
 }
 
+// Remove will remove the pointer from the quadtree.
+// By default it'll match using the points,
+// but a FilterFunc can be provided for a more specific test
+// if there are elements with the same point value in the tree.
+// i. e.:
+//
+//	func(pointer geo.Pointer) {
+//		return pointer.(*MyType).ID == lookingFor.ID
+//	}
+func (q *Quadtree) Remove(p geo.Pointer, eq FilterFunc) bool {
+	if eq == nil {
+		point := p.Point()
+		eq = func(pointer geo.Pointer) bool {
+			return point.Equal(pointer.Point())
+		}
+	}
+
+	b := q.bound
+	v := &findVisitor{
+		point:          p.Point(),
+		filter:         eq,
+		closestBound:   &b,
+		minDistSquared: math.MaxFloat64,
+	}
+
+	newVisit(v).Visit(q.root, q.bound.Min[0], q.bound.Max[0], q.bound.Min[1], q.bound.Max[1])
+	if v.closest == nil {
+		return false
+	}
+
+	v.closest.Value = nil
+	// if v.closest is NOT a leaf node, values will be shuffled up into this node.
+	// if v.closest IS a leaf node, the call is a no-op but we can't delete
+	// the now empty node because we don't know the parent here.
+	// Future adds will reuse this node if applicable.
+	// Removing v.closest parent will cause this node to be removed,
+	// but the parent will be a leaf with a nil value.
+	removeNode(v.closest)
+	return true
+}
+
 // add is the recursive search to find a place to add the point.
 func (q *Quadtree) add(n *node, p geo.Pointer, point geo.Point, left, right, bottom, top float64) {
 	var i int
