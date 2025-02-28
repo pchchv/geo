@@ -459,6 +459,13 @@ func (pq pointsQueue) Swap(i, j int) {
 	pq[j].index = j
 }
 
+func (pq pointsQueue) Len() int { return len(pq) }
+
+func (pq pointsQueue) Less(i, j int) bool {
+	// want pop longest distances so Less was inverted
+	return pq[i].distance > pq[j].distance
+}
+
 func childIndex(cx, cy float64, point geo.Point) (i int) {
 	if point[1] <= cy {
 		i = 2
