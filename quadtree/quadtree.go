@@ -170,6 +170,48 @@ func (q *Quadtree) Remove(p geo.Pointer, eq FilterFunc) bool {
 	return true
 }
 
+// KNearestMatching returns k closest Value/Pointer in the
+// quadtree for which the given filter function returns true.
+// This function is thread safe.
+// Multiple goroutines can read from a pre-created tree.
+// An optional buffer parameter allows the result slice memory to be reused.
+// The points are returned in sorted order, nearest first.
+// KNearestMatching allows defining a maximum distance in order to reduce search iterations.
+func (q *Quadtree) KNearestMatching(buf []geo.Pointer, p geo.Point, k int, f FilterFunc, maxDistance ...float64) []geo.Pointer {
+	if q.root == nil {
+		return nil
+	}
+
+	b := q.bound
+	v := &nearestVisitor{
+		point:          p,
+		filter:         f,
+		k:              k,
+		maxHeap:        make(maxHeap, 0, k+1),
+		closestBound:   &b,
+		maxDistSquared: math.MaxFloat64,
+	}
+	if len(maxDistance) > 0 {
+		v.maxDistSquared = maxDistance[0] * maxDistance[0]
+	}
+
+	newVisit(v).Visit(q.root, q.bound.Min[0], q.bound.Max[0], q.bound.Min[1], q.bound.Max[1])
+
+	// repack result
+	if cap(buf) < len(v.maxHeap) {
+		buf = make([]geo.Pointer, len(v.maxHeap))
+	} else {
+		buf = buf[:len(v.maxHeap)]
+	}
+
+	for i := len(v.maxHeap) - 1; i >= 0; i-- {
+		buf[i] = v.maxHeap[0].point
+		v.maxHeap.Pop()
+	}
+
+	return buf
+}
+
 // add is the recursive search to find a place to add the point.
 func (q *Quadtree) add(n *node, p geo.Pointer, point geo.Point, left, right, bottom, top float64) {
 	var i int
