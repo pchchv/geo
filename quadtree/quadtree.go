@@ -437,6 +437,13 @@ func newPointsQueue(capacity int) pointsQueue {
 	return make([]pointsQueueItem, 0, capacity+1)
 }
 
+func (pq *pointsQueue) Push(x interface{}) {
+	n := len(*pq)
+	item := x.(pointsQueueItem)
+	item.index = n
+	*pq = append(*pq, item)
+}
+
 func childIndex(cx, cy float64, point geo.Point) (i int) {
 	if point[1] <= cy {
 		i = 2
