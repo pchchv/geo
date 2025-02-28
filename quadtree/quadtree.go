@@ -212,6 +212,16 @@ func (q *Quadtree) KNearestMatching(buf []geo.Pointer, p geo.Point, k int, f Fil
 	return buf
 }
 
+// KNearest returns k closest Value/Pointer in the quadtree.
+// KNearest is thread safe.
+// Multiple goroutines can read from a pre-created tree.
+// An optional buffer parameter is provided to allow for the reuse of result slice memory.
+// The points are returned in a sorted order, nearest first.
+// KNearest allows defining a maximum distance in order to reduce search iterations.
+func (q *Quadtree) KNearest(buf []geo.Pointer, p geo.Point, k int, maxDistance ...float64) []geo.Pointer {
+	return q.KNearestMatching(buf, p, k, nil, maxDistance...)
+}
+
 // add is the recursive search to find a place to add the point.
 func (q *Quadtree) add(n *node, p geo.Pointer, point geo.Point, left, right, bottom, top float64) {
 	var i int
