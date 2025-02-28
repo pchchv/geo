@@ -13,3 +13,26 @@ type heapItem struct {
 // When a point is found closer than the furthest point,
 // remove furthest and add the new point to the heap.
 type maxHeap []heapItem
+
+func (h *maxHeap) Push(point geo.Pointer, distance float64) {
+	prevLen := len(*h)
+	*h = (*h)[:prevLen+1]
+	(*h)[prevLen].point = point
+	(*h)[prevLen].distance = distance
+	i := len(*h) - 1
+	for i > 0 {
+		up := ((i + 1) >> 1) - 1
+		parent := (*h)[up]
+		if distance < parent.distance {
+			// parent is further so we're done fixing up the heap.
+			break
+		}
+
+		// swap nodes
+		(*h)[i].point = parent.point
+		(*h)[i].distance = parent.distance
+		(*h)[up].point = point
+		(*h)[up].distance = distance
+		i = up
+	}
+}
