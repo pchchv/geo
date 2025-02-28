@@ -36,3 +36,47 @@ func (h *maxHeap) Push(point geo.Pointer, distance float64) {
 		i = up
 	}
 }
+
+// Pop returns the "greatest" item in the list.
+// The returned item should not be saved across push/pop operations.
+func (h *maxHeap) Pop() {
+	lastItem := (*h)[len(*h)-1]
+	(*h) = (*h)[:len(*h)-1]
+	mh := (*h)
+	if len(mh) == 0 {
+		return
+	}
+
+	var i int
+	// move the last item to the top and reset the heap
+	mh[0].point = lastItem.point
+	mh[0].distance = lastItem.distance
+	for {
+		right := (i + 1) << 1
+		left := right - 1
+		childIndex := i
+		child := mh[childIndex]
+		// swap with biggest child
+		if left < len(mh) && child.distance < mh[left].distance {
+			childIndex = left
+			child = mh[left]
+		}
+
+		if right < len(mh) && child.distance < mh[right].distance {
+			childIndex = right
+			child = mh[right]
+		}
+
+		// non bigger, so quit
+		if childIndex == i {
+			break
+		}
+
+		// swap the nodes
+		mh[i].point = child.point
+		mh[i].distance = child.distance
+		mh[childIndex].point = lastItem.point
+		mh[childIndex].distance = lastItem.distance
+		i = childIndex
+	}
+}
