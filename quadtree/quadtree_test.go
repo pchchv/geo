@@ -10,6 +10,11 @@ import (
 	"github.com/pchchv/geo/planar"
 )
 
+type PExtra struct {
+	p  geo.Point
+	id string
+}
+
 func TestNew(t *testing.T) {
 	bound := geo.Bound{Min: geo.Point{0, 2}, Max: geo.Point{1, 3}}
 	qt := New(bound)
