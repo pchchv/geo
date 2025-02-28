@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/planar"
@@ -42,8 +43,7 @@ func TestQuadtreeFind(t *testing.T) {
 
 	qt := New(points.Bound())
 	for _, p := range points {
-		err := qt.Add(p)
-		if err != nil {
+		if err := qt.Add(p); err != nil {
 			t.Fatalf("unexpected error for %v: %v", p, err)
 		}
 	}
@@ -95,11 +95,11 @@ func TestQuadtreeMatching(t *testing.T) {
 
 	qt := New(geo.Bound{Min: geo.Point{0, 0}, Max: geo.Point{1, 1}})
 	if err := qt.Add(dataPointer{geo.Point{0, 0}, false}); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %e", err)
 	}
 
 	if err := qt.Add(dataPointer{geo.Point{1, 1}, true}); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %e", err)
 	}
 
 	cases := []struct {
@@ -256,6 +256,267 @@ func TestQuadtreeAdd(t *testing.T) {
 		if err := qt.Add(p); err != nil {
 			t.Fatalf("unexpected error for %v: %v", p, err)
 		}
+	}
+}
+
+func TestQuadtreeRemove(t *testing.T) {
+	mp := geo.MultiPoint{}
+	r := rand.New(rand.NewSource(42))
+	qt := New(geo.Bound{Min: geo.Point{0, 0}, Max: geo.Point{1, 1}})
+	for i := 0; i < 1000; i++ {
+		mp = append(mp, geo.Point{r.Float64(), r.Float64()})
+		if err := qt.Add(mp[i]); err != nil {
+			t.Fatalf("unexpected error for %v: %v", mp[i], err)
+		}
+	}
+
+	for i := 0; i < 1000; i += 3 {
+		qt.Remove(mp[i], nil)
+		mp[i] = geo.Point{-10000, -10000}
+	}
+
+	// make sure finding still works for 1000 random points
+	for i := 0; i < 1000; i++ {
+		p := geo.Point{r.Float64(), r.Float64()}
+		f := qt.Find(p)
+		_, j := planar.DistanceFromWithIndex(mp, p)
+		if e := mp[j]; !e.Equal(f.Point()) {
+			t.Errorf("index: %d, unexpected point %v != %v", i, e, f.Point())
+		}
+	}
+}
+
+func TestQuadtreeRemoveAndAdd_inOrder(t *testing.T) {
+	seed := time.Now().UnixNano()
+	t.Logf("seed: %v", seed)
+	r := rand.New(rand.NewSource(seed))
+	qt := New(geo.Bound{Min: geo.Point{0, 0}, Max: geo.Point{1, 1}})
+	p1 := &PExtra{p: geo.Point{r.Float64(), r.Float64()}, id: "1"}
+	p2 := &PExtra{p: geo.Point{p1.p[0], p1.p[1]}, id: "2"}
+	p3 := &PExtra{p: geo.Point{p1.p[0], p1.p[1]}, id: "3"}
+	if err := qt.Add(p1); err != nil {
+		t.Fatalf("unexpected error: %e", err)
+	}
+
+	if err := qt.Add(p2); err != nil {
+		t.Fatalf("unexpected error: %e", err)
+	}
+
+	if err := qt.Add(p3); err != nil {
+		t.Fatalf("unexpected error: %e", err)
+	}
+
+	// rm 3
+	found := qt.Remove(p3, func(p geo.Pointer) bool {
+		return p.(*PExtra).id == p3.id
+	})
+	if !found {
+		t.Error("didn't find/remove point")
+	}
+
+	// leaf node doesn't actually get removed
+	if c := countNodes(qt.root); c != 3 {
+		t.Errorf("incorrect number of nodes: %v != 3", c)
+	}
+
+	// 3 again
+	found = qt.Remove(p3, func(p geo.Pointer) bool {
+		return p.(*PExtra).id == p3.id
+	})
+	if found {
+		t.Errorf("should not find already removed node")
+	}
+
+	// rm 2
+	found = qt.Remove(p2, func(p geo.Pointer) bool {
+		return p.(*PExtra).id == p2.id
+	})
+	if !found {
+		t.Error("didn't find/remove point")
+	}
+
+	if c := countNodes(qt.root); c != 2 {
+		t.Errorf("incorrect number of nodes: %v != 2", c)
+	}
+
+	// rm 1
+	found = qt.Remove(p1, func(p geo.Pointer) bool {
+		return p.(*PExtra).id == p1.id
+	})
+	if !found {
+		t.Error("didn't find/remove point")
+	}
+
+	if c := countNodes(qt.root); c != 1 {
+		t.Errorf("incorrect number of nodes: %v != 1", c)
+	}
+}
+
+func TestQuadtreeRemoveAndAdd_sameLoc(t *testing.T) {
+	seed := time.Now().UnixNano()
+	t.Logf("seed: %v", seed)
+	r := rand.New(rand.NewSource(seed))
+	qt := New(geo.Bound{Min: geo.Point{0, 0}, Max: geo.Point{1, 1}})
+	p1 := &PExtra{p: geo.Point{r.Float64(), r.Float64()}, id: "1"}
+	p2 := &PExtra{p: geo.Point{p1.p[0], p1.p[1]}, id: "2"}
+	p3 := &PExtra{p: geo.Point{p1.p[0], p1.p[1]}, id: "3"}
+	p4 := &PExtra{p: geo.Point{p1.p[0], p1.p[1]}, id: "4"}
+	p5 := &PExtra{p: geo.Point{p1.p[0], p1.p[1]}, id: "5"}
+
+	if err := qt.Add(p1); err != nil {
+		t.Fatalf("unexpected error: %e", err)
+	}
+
+	if err := qt.Add(p2); err != nil {
+		t.Fatalf("unexpected error: %e", err)
+	}
+
+	if err := qt.Add(p3); err != nil {
+		t.Fatalf("unexpected error: %e", err)
+	}
+
+	// remove middle point
+	found := qt.Remove(p2, func(p geo.Pointer) bool {
+		return p.(*PExtra).id == p2.id
+	})
+	if !found {
+		t.Error("didn't find/remove point")
+	}
+
+	if c := countNodes(qt.root); c != 2 {
+		t.Errorf("incorrect number of nodes: %v != 2", c)
+	}
+
+	// remove first point
+	found = qt.Remove(p1, func(p geo.Pointer) bool {
+		return p.(*PExtra).id == p1.id
+	})
+	if !found {
+		t.Error("didn't find/remove point")
+	}
+
+	if c := countNodes(qt.root); c != 1 {
+		t.Errorf("incorrect number of nodes: %v != 1", c)
+	}
+
+	// add a 4th point
+	if err := qt.Add(p4); err != nil {
+		t.Fatalf("unexpected error: %e", err)
+	}
+
+	// remove third point
+	found = qt.Remove(p3, func(p geo.Pointer) bool {
+		return p.(*PExtra).id == p3.id
+	})
+	if !found {
+		t.Error("didn't find/remove point")
+	}
+
+	if c := countNodes(qt.root); c != 1 {
+		t.Errorf("incorrect number of nodes: %v != 1", c)
+	}
+
+	// add a 5th point
+	if err := qt.Add(p5); err != nil {
+		t.Fatalf("unexpected error: %e", err)
+	}
+
+	// remove the 5th point
+	found = qt.Remove(p5, func(p geo.Pointer) bool {
+		return p.(*PExtra).id == p5.id
+	})
+	if !found {
+		t.Error("didn't find/remove point")
+	}
+
+	// 5 is a tail point, so its not does not actually get removed
+	if c := countNodes(qt.root); c != 2 {
+		t.Errorf("incorrect number of nodes: %v != 2", c)
+	}
+
+	// add a 3th point again
+	if err := qt.Add(p3); err != nil {
+		t.Fatalf("unexpected error: %e", err)
+	}
+
+	// should reuse the tail point left by p5
+	if c := countNodes(qt.root); c != 2 {
+		t.Errorf("incorrect number of nodes: %v != 2", c)
+	}
+
+	// remove p4/root
+	found = qt.Remove(p4, func(p geo.Pointer) bool {
+		return p.(*PExtra).id == p4.id
+	})
+	if !found {
+		t.Error("didn't find/remove point")
+	}
+
+	if c := countNodes(qt.root); c != 1 {
+		t.Errorf("incorrect number of nodes: %v != 1", c)
+	}
+
+	// remove p3/root
+	found = qt.Remove(p3, func(p geo.Pointer) bool {
+		return p.(*PExtra).id == p3.id
+	})
+	if !found {
+		t.Error("didn't find/remove point")
+	}
+
+	// just the root, can't remove it
+	if c := countNodes(qt.root); c != 1 {
+		t.Errorf("incorrect number of nodes: %v != 1", c)
+	}
+
+	// add back a point to be put in the root
+	if err := qt.Add(p3); err != nil {
+		t.Fatalf("unexpected error: %e", err)
+	}
+
+	if c := countNodes(qt.root); c != 1 {
+		t.Errorf("incorrect number of nodes: %v != 1", c)
+	}
+}
+
+func TestQuadtreeRemoveAndAdd_random(t *testing.T) {
+	const perRun = 300
+	const runs = 10
+	var id int
+	seed := time.Now().UnixNano()
+	t.Logf("seed: %v", seed)
+	r := rand.New(rand.NewSource(seed))
+	bounds := geo.Bound{Min: geo.Point{0, 0}, Max: geo.Point{3000, 3000}}
+	qt := New(bounds)
+	points := make([]*PExtra, 0, 3000)
+	for i := 0; i < runs; i++ {
+		for j := 0; j < perRun; j++ {
+			x := r.Int63n(30)
+			y := r.Int63n(30)
+			id++
+			p := &PExtra{p: geo.Point{float64(x), float64(y)}, id: fmt.Sprintf("%d", id)}
+			if err := qt.Add(p); err != nil {
+				t.Fatalf("unexpected error for %v: %v", p, err)
+			}
+
+			points = append(points, p)
+
+		}
+
+		for j := 0; j < perRun/2; j++ {
+			k := r.Int() % len(points)
+			remP := points[k]
+			points = append(points[:k], points[k+1:]...)
+			qt.Remove(remP, func(p geo.Pointer) bool {
+				return p.(*PExtra).id == remP.id
+			})
+		}
+	}
+
+	left := len(qt.InBound(nil, bounds))
+	expected := runs * perRun / 2
+	if left != expected {
+		t.Errorf("incorrect number of points in tree: %d != %d", left, expected)
 	}
 }
 
