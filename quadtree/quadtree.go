@@ -430,6 +430,13 @@ type pointsQueueItem struct {
 	index    int     // point index in queue
 }
 
+type pointsQueue []pointsQueueItem
+
+func newPointsQueue(capacity int) pointsQueue {
+	// makes capacity+1 because is needed additional place for the greatest element
+	return make([]pointsQueueItem, 0, capacity+1)
+}
+
 func childIndex(cx, cy float64, point geo.Point) (i int) {
 	if point[1] <= cy {
 		i = 2
