@@ -328,6 +328,15 @@ func (v *inBoundVisitor) Point() (p geo.Point) {
 	return
 }
 
+type nearestVisitor struct {
+	point          geo.Point
+	filter         FilterFunc
+	k              int
+	maxHeap        maxHeap
+	closestBound   *geo.Bound
+	maxDistSquared float64
+}
+
 func childIndex(cx, cy float64, point geo.Point) (i int) {
 	if point[1] <= cy {
 		i = 2
