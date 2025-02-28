@@ -372,6 +372,12 @@ func (v *nearestVisitor) Point() geo.Point {
 	return v.point
 }
 
+type pointsQueueItem struct {
+	point    geo.Pointer
+	distance float64 // distance to point and priority inside the queue
+	index    int     // point index in queue
+}
+
 func childIndex(cx, cy float64, point geo.Point) (i int) {
 	if point[1] <= cy {
 		i = 2
