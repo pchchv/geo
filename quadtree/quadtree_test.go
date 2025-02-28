@@ -244,3 +244,10 @@ func TestQuadtreeAdd(t *testing.T) {
 		}
 	}
 }
+
+func countNodes(n *node) (c int) {
+	if n != nil {
+		c = 1 + countNodes(n.Children[0]) + countNodes(n.Children[1]) + countNodes(n.Children[2]) + countNodes(n.Children[3])
+	}
+	return
+}
