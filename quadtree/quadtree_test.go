@@ -520,6 +520,203 @@ func TestQuadtreeRemoveAndAdd_random(t *testing.T) {
 	}
 }
 
+func TestQuadtreeKNearest(t *testing.T) {
+	type dataPointer struct {
+		geo.Pointer
+		visible bool
+	}
+
+	q := New(geo.Bound{Max: geo.Point{5, 5}})
+	pointers := []dataPointer{
+		{geo.Point{0, 0}, false},
+		{geo.Point{1, 1}, true},
+		{geo.Point{2, 2}, false},
+		{geo.Point{3, 3}, true},
+		{geo.Point{4, 4}, false},
+		{geo.Point{5, 5}, true},
+	}
+
+	for _, p := range pointers {
+		if err := q.Add(p); err != nil {
+			t.Fatalf("unexpected error for %v: %v", p, err)
+		}
+	}
+
+	filters := map[bool]FilterFunc{
+		false: nil,
+		true:  func(p geo.Pointer) bool { return p.(dataPointer).visible },
+	}
+
+	cases := []struct {
+		name     string
+		filtered bool
+		point    geo.Point
+		expected []geo.Point
+	}{
+		{
+			name:     "unfiltered",
+			filtered: false,
+			point:    geo.Point{0.1, 0.1},
+			expected: []geo.Point{{0, 0}, {1, 1}},
+		},
+		{
+			name:     "filtered",
+			filtered: true,
+			point:    geo.Point{0.1, 0.1},
+			expected: []geo.Point{{1, 1}, {3, 3}},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if !tc.filtered {
+				v := q.KNearest(nil, tc.point, 2)
+				if len(v) != len(tc.expected) {
+					t.Errorf("incorrect response length: %d != %d", len(v), len(tc.expected))
+				}
+			}
+
+			v := q.KNearestMatching(nil, tc.point, 2, filters[tc.filtered])
+			if len(v) != len(tc.expected) {
+				t.Errorf("incorrect response length: %d != %d", len(v), len(tc.expected))
+			}
+
+			result := make([]geo.Point, 0)
+			for _, p := range v {
+				result = append(result, p.Point())
+			}
+
+			sort.Slice(result, func(i, j int) bool {
+				return result[i][0] < result[j][0]
+			})
+
+			sort.Slice(tc.expected, func(i, j int) bool {
+				return tc.expected[i][0] < tc.expected[j][0]
+			})
+
+			if !reflect.DeepEqual(result, tc.expected) {
+				t.Log(result)
+				t.Log(tc.expected)
+				t.Errorf("incorrect results")
+			}
+		})
+	}
+}
+
+func TestQuadtreeKNearest_sorted(t *testing.T) {
+	q := New(geo.Bound{Max: geo.Point{5, 5}})
+	for i := 0; i <= 5; i++ {
+		if err := q.Add(geo.Point{float64(i), float64(i)}); err != nil {
+			t.Fatalf("unexpected error: %e", err)
+		}
+	}
+
+	nearest := q.KNearest(nil, geo.Point{2.25, 2.25}, 5)
+	expected := []geo.Point{{2, 2}, {3, 3}, {1, 1}, {4, 4}, {0, 0}}
+	for i, p := range expected {
+		if n := nearest[i].Point(); !n.Equal(p) {
+			t.Errorf("incorrect point %d: %v", i, n)
+		}
+	}
+}
+
+func TestQuadtreeKNearest_sorted2(t *testing.T) {
+	q := New(geo.Bound{Max: geo.Point{8, 8}})
+	for i := 0; i <= 7; i++ {
+		if err := q.Add(geo.Point{float64(i), float64(i)}); err != nil {
+			t.Fatalf("unexpected error: %e", err)
+		}
+	}
+
+	nearest := q.KNearest(nil, geo.Point{5.25, 5.25}, 3)
+	expected := []geo.Point{{5, 5}, {6, 6}, {4, 4}}
+	for i, p := range expected {
+		if n := nearest[i].Point(); !n.Equal(p) {
+			t.Errorf("incorrect point %d: %v", i, n)
+		}
+	}
+}
+
+func TestQuadtreeKNearest_DistanceLimit(t *testing.T) {
+	type dataPointer struct {
+		geo.Pointer
+		visible bool
+	}
+
+	q := New(geo.Bound{Max: geo.Point{5, 5}})
+	pointers := []dataPointer{
+		{geo.Point{0, 0}, false},
+		{geo.Point{1, 1}, true},
+		{geo.Point{2, 2}, false},
+		{geo.Point{3, 3}, true},
+		{geo.Point{4, 4}, false},
+		{geo.Point{5, 5}, true},
+	}
+
+	for _, p := range pointers {
+		if err := q.Add(p); err != nil {
+			t.Fatalf("unexpected error for %v: %v", p, err)
+		}
+	}
+
+	filters := map[bool]FilterFunc{
+		false: nil,
+		true:  func(p geo.Pointer) bool { return p.(dataPointer).visible },
+	}
+
+	cases := []struct {
+		name     string
+		filtered bool
+		distance float64
+		point    geo.Point
+		expected []geo.Point
+	}{
+		{
+			name:     "filtered",
+			filtered: true,
+			distance: 5,
+			point:    geo.Point{0.1, 0.1},
+			expected: []geo.Point{{1, 1}, {3, 3}},
+		},
+		{
+			name:     "unfiltered",
+			filtered: false,
+			distance: 1,
+			point:    geo.Point{0.1, 0.1},
+			expected: []geo.Point{{0, 0}},
+		},
+	}
+
+	var v []geo.Pointer
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			v = q.KNearestMatching(v, tc.point, 5, filters[tc.filtered], tc.distance)
+			if len(v) != len(tc.expected) {
+				t.Errorf("incorrect response length: %d != %d", len(v), len(tc.expected))
+			}
+
+			result := make([]geo.Point, 0)
+			for _, p := range v {
+				result = append(result, p.Point())
+			}
+
+			sort.Slice(result, func(i, j int) bool {
+				return result[i][0] < result[j][0]
+			})
+
+			sort.Slice(tc.expected, func(i, j int) bool {
+				return tc.expected[i][0] < tc.expected[j][0]
+			})
+
+			if !reflect.DeepEqual(result, tc.expected) {
+				t.Log(result)
+				t.Log(tc.expected)
+				t.Errorf("incorrect results")
+			}
+		})
+	}
+}
+
 func countNodes(n *node) (c int) {
 	if n != nil {
 		c = 1 + countNodes(n.Children[0]) + countNodes(n.Children[1]) + countNodes(n.Children[2]) + countNodes(n.Children[3])
