@@ -337,6 +337,41 @@ type nearestVisitor struct {
 	maxDistSquared float64
 }
 
+func (v *nearestVisitor) Visit(n *node) {
+	// skip this pointer if have a filter and it doesn't match
+	if v.filter != nil && !v.filter(n.Value) {
+		return
+	}
+
+	point := n.Value.Point()
+	if d := planar.DistanceSquared(point, v.point); d < v.maxDistSquared {
+		v.maxHeap.Push(n.Value, d)
+		if len(v.maxHeap) > v.k {
+			v.maxHeap.Pop()
+			// actually this is a hack
+			// know how heap works and obtain
+			// top element without function call
+			top := v.maxHeap[0]
+			v.maxDistSquared = top.distance
+			// have filled queue,
+			// so start to restrict searching range
+			d = math.Sqrt(top.distance)
+			v.closestBound.Min[0] = v.point[0] - d
+			v.closestBound.Max[0] = v.point[0] + d
+			v.closestBound.Min[1] = v.point[1] - d
+			v.closestBound.Max[1] = v.point[1] + d
+		}
+	}
+}
+
+func (v *nearestVisitor) Bound() *geo.Bound {
+	return v.closestBound
+}
+
+func (v *nearestVisitor) Point() geo.Point {
+	return v.point
+}
+
 func childIndex(cx, cy float64, point geo.Point) (i int) {
 	if point[1] <= cy {
 		i = 2
