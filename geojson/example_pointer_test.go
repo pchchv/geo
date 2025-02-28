@@ -1,6 +1,10 @@
 package geojson_test
 
-import "github.com/pchchv/geo/geojson"
+import (
+	"github.com/pchchv/geo"
+	"github.com/pchchv/geo/geojson"
+	"github.com/pchchv/geo/planar"
+)
 
 type CentroidPoint struct {
 	*geojson.Feature
