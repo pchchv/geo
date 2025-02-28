@@ -298,3 +298,33 @@ func childIndex(cx, cy float64, point geo.Point) (i int) {
 
 	return
 }
+
+// removeNode is the recursive fixing up of the tree when we remove a node.
+// It will pull up a child value into it's place.
+// It will try to remove leaf nodes that are now empty,
+// since their values got pulled up.
+func removeNode(n *node) bool {
+	var i int
+	if n.Children[0] != nil {
+		i = 0
+	} else if n.Children[1] != nil {
+		i = 1
+	} else if n.Children[2] != nil {
+		i = 2
+	} else if n.Children[3] != nil {
+		i = 3
+	} else {
+		// all children are nil, can remove
+		// n.value ==  nil because it pulled up or removed by the caller
+		return true
+	}
+
+	n.Value = n.Children[i].Value
+	n.Children[i].Value = nil
+	removeThisChild := removeNode(n.Children[i])
+	if removeThisChild {
+		n.Children[i] = nil
+	}
+
+	return false
+}
