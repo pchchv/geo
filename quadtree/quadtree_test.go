@@ -1,6 +1,7 @@
 package quadtree
 
 import (
+	"fmt"
 	"math/rand"
 	"reflect"
 	"sort"
@@ -13,6 +14,14 @@ import (
 type PExtra struct {
 	p  geo.Point
 	id string
+}
+
+func (p *PExtra) Point() geo.Point {
+	return p.p
+}
+
+func (p *PExtra) String() string {
+	return fmt.Sprintf("%v: %v", p.id, p.p)
 }
 
 func TestNew(t *testing.T) {
