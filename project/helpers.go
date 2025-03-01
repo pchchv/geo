@@ -40,3 +40,21 @@ func Bound(bound geo.Bound, proj geo.Projection) geo.Bound {
 	min := proj(bound.Min)
 	return geo.Bound{Min: min, Max: min}.Extend(proj(bound.Max))
 }
+
+// Polygon is a helper to project an entire polygon.
+func Polygon(p geo.Polygon, proj geo.Projection) geo.Polygon {
+	for i := range p {
+		p[i] = Ring(p[i], proj)
+	}
+
+	return p
+}
+
+// MultiPolygon is a helper to project an entire multi polygon.
+func MultiPolygon(mp geo.MultiPolygon, proj geo.Projection) geo.MultiPolygon {
+	for i := range mp {
+		mp[i] = Polygon(mp[i], proj)
+	}
+
+	return mp
+}
