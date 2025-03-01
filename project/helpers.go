@@ -58,3 +58,21 @@ func MultiPolygon(mp geo.MultiPolygon, proj geo.Projection) geo.MultiPolygon {
 
 	return mp
 }
+
+// Collection is a helper to project a rectangle.
+func Collection(c geo.Collection, proj geo.Projection) geo.Collection {
+	for i := range c {
+		c[i] = Geometry(c[i], proj)
+	}
+
+	return c
+}
+
+// Geometry is a helper to project any geomtry.
+func Geometry(g geo.Geometry, proj geo.Projection) geo.Geometry {
+	if g == nil {
+		return nil
+	}
+
+	panic("geometry type not supported")
+}
