@@ -1,6 +1,7 @@
 package project
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/pchchv/geo"
@@ -34,3 +35,12 @@ var (
 		},
 	}
 )
+
+// MercatorScaleFactor returns the mercator scaling factor for a given degree latitude.
+func MercatorScaleFactor(g geo.Point) float64 {
+	if g[1] < -90.0 || g[1] > 90.0 {
+		panic(fmt.Sprintf("orb: latitude out of range, given %f", g[1]))
+	}
+
+	return 1.0 / math.Cos(g[1]/180.0*math.Pi)
+}
