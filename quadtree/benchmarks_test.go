@@ -132,3 +132,39 @@ func BenchmarkRandomInBound1000Buf(b *testing.B) {
 		buf = qt.InBound(buf, p.Bound().Pad(0.1))
 	}
 }
+
+func BenchmarkRandomKNearest10(b *testing.B) {
+	r := rand.New(rand.NewSource(43))
+	qt := New(geo.Bound{Min: geo.Point{0, 0}, Max: geo.Point{1, 1}})
+	for i := 0; i < 1000; i++ {
+		p := geo.Point{r.Float64(), r.Float64()}
+		if err := qt.Add(p); err != nil {
+			b.Fatalf("unexpected error for %v: %v", p, err)
+		}
+	}
+
+	buf := make([]geo.Pointer, 0, 10)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		qt.KNearest(buf[:0], geo.Point{r.Float64(), r.Float64()}, 10)
+	}
+}
+
+func BenchmarkRandomKNearest100(b *testing.B) {
+	r := rand.New(rand.NewSource(43))
+	qt := New(geo.Bound{Min: geo.Point{0, 0}, Max: geo.Point{1, 1}})
+	for i := 0; i < 1000; i++ {
+		p := geo.Point{r.Float64(), r.Float64()}
+		if err := qt.Add(p); err != nil {
+			b.Fatalf("unexpected error for %v: %v", p, err)
+		}
+	}
+
+	buf := make([]geo.Pointer, 0, 100)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		qt.KNearest(buf[:0], geo.Point{r.Float64(), r.Float64()}, 100)
+	}
+}
