@@ -34,3 +34,9 @@ func MultiLineString(mls geo.MultiLineString, proj geo.Projection) geo.MultiLine
 func Ring(r geo.Ring, proj geo.Projection) geo.Ring {
 	return geo.Ring(LineString(geo.LineString(r), proj))
 }
+
+// Bound is a helper to project a rectangle.
+func Bound(bound geo.Bound, proj geo.Projection) geo.Bound {
+	min := proj(bound.Min)
+	return geo.Bound{Min: min, Max: min}.Extend(proj(bound.Max))
+}
