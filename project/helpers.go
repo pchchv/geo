@@ -15,3 +15,17 @@ func MultiPoint(mp geo.MultiPoint, proj geo.Projection) geo.MultiPoint {
 
 	return mp
 }
+
+// LineString is a helper to project an entire line string.
+func LineString(ls geo.LineString, proj geo.Projection) geo.LineString {
+	return geo.LineString(MultiPoint(geo.MultiPoint(ls), proj))
+}
+
+// MultiLineString is a helper to project an entire multi linestring.
+func MultiLineString(mls geo.MultiLineString, proj geo.Projection) geo.MultiLineString {
+	for i := range mls {
+		mls[i] = LineString(mls[i], proj)
+	}
+
+	return mls
+}
