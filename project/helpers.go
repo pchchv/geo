@@ -74,5 +74,26 @@ func Geometry(g geo.Geometry, proj geo.Projection) geo.Geometry {
 		return nil
 	}
 
+	switch g := g.(type) {
+	case geo.Point:
+		return Point(g, proj)
+	case geo.MultiPoint:
+		return MultiPoint(g, proj)
+	case geo.LineString:
+		return LineString(g, proj)
+	case geo.MultiLineString:
+		return MultiLineString(g, proj)
+	case geo.Ring:
+		return Ring(g, proj)
+	case geo.Polygon:
+		return Polygon(g, proj)
+	case geo.MultiPolygon:
+		return MultiPolygon(g, proj)
+	case geo.Collection:
+		return Collection(g, proj)
+	case geo.Bound:
+		return Bound(g, proj)
+	}
+
 	panic("geometry type not supported")
 }
