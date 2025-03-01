@@ -29,3 +29,8 @@ func MultiLineString(mls geo.MultiLineString, proj geo.Projection) geo.MultiLine
 
 	return mls
 }
+
+// Ring is a helper to project an entire ring.
+func Ring(r geo.Ring, proj geo.Projection) geo.Ring {
+	return geo.Ring(LineString(geo.LineString(r), proj))
+}
