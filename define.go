@@ -1,10 +1,14 @@
 package geo
 
-// Constants to define orientation.
-// They follow the right hand rule for orientation.
 const (
+	// Constants to define orientation.
+	// They follow the right hand rule for orientation.
 	CW  Orientation = -1 // stands for Clock Wise
 	CCW Orientation = 1  // stands for Counter Clock Wise
+	// EarthRadius is the radius of the earth in meters.
+	// It is used in geo distance calculations.
+	// To keep things consistent, this value matches WGS84 Web Mercator (EPSG:3857).
+	EarthRadius = 6378137.0 // meters
 )
 
 // DefaultRoundingFactor is default rounding factor used by the Round func.
