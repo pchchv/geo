@@ -7,6 +7,9 @@ const (
 	CCW Orientation = 1  // stands for Counter Clock Wise
 )
 
+// DefaultRoundingFactor is default rounding factor used by the Round func.
+var DefaultRoundingFactor = 1e6 // 6 decimal places
+
 // Pointer is something that can be represented by a point.
 type Pointer interface {
 	Point() Point
