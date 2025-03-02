@@ -52,3 +52,44 @@ func TestRing(t *testing.T) {
 		})
 	}
 }
+
+func TestMultiLineString(t *testing.T) {
+	bound := geo.Bound{Min: geo.Point{0, 0}, Max: geo.Point{2, 2}}
+	cases := []struct {
+		name   string
+		open   bool
+		input  geo.MultiLineString
+		output geo.MultiLineString
+	}{
+		{
+			name: "regular closed bound clip",
+			input: geo.MultiLineString{
+				{{1, 1}, {2, 1}, {2, 2}, {3, 3}},
+			},
+			output: geo.MultiLineString{
+				{{1, 1}, {2, 1}, {2, 2}, {2, 2}},
+			},
+		},
+		{
+			name: "open bound clip",
+			open: true,
+			input: geo.MultiLineString{
+				{{1, 1}, {2, 1}, {2, 2}, {3, 3}},
+			},
+			output: geo.MultiLineString{
+				{{1, 1}, {2, 1}},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := MultiLineString(bound, tc.input, OpenBound(tc.open))
+			if !result.Equal(tc.output) {
+				t.Errorf("not equal")
+				t.Logf("%v", result)
+				t.Logf("%v", tc.output)
+			}
+		})
+	}
+}
