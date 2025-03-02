@@ -55,3 +55,42 @@ func MultiLineString(b geo.Bound, mls geo.MultiLineString, opts ...Option) (resu
 
 	return
 }
+
+// Polygon clips the polygon to the
+// bounding box excluding the inner rings if they
+// do not intersect the bounding box.
+// This operation will modify the input by
+// using as a scratch space so clone if necessary.
+func Polygon(b geo.Bound, p geo.Polygon) geo.Polygon {
+	if len(p) == 0 {
+		return nil
+	}
+
+	r := Ring(b, p[0])
+	if r == nil {
+		return nil
+	}
+
+	result := geo.Polygon{r}
+	for i := 1; i < len(p); i++ {
+		if r = Ring(b, p[i]); r != nil {
+			result = append(result, r)
+		}
+	}
+
+	return result
+}
+
+// MultiPolygon clips the multi polygon to the bounding box excluding
+// any polygons if they don't intersect the bounding box.
+// This operation will modify the input by
+// using as a scratch space so clone if necessary.
+func MultiPolygon(b geo.Bound, mp geo.MultiPolygon) (result geo.MultiPolygon) {
+	for _, polygon := range mp {
+		if p := Polygon(b, polygon); p != nil {
+			result = append(result, p)
+		}
+	}
+
+	return
+}
