@@ -130,3 +130,17 @@ func Bound(b, bound geo.Bound) geo.Bound {
 		},
 	}
 }
+
+// Collection clips each element in the collection to the bounding box.
+// It will exclude elements if they don't intersect the bounding box.
+// This operation will modify the input of '2d geometry' by
+// using as a scratch space so clone if necessary.
+func Collection(b geo.Bound, c geo.Collection) (result geo.Collection) {
+	for _, g := range c {
+		if clipped := Geometry(b, g); clipped != nil {
+			result = append(result, clipped)
+		}
+	}
+
+	return
+}
