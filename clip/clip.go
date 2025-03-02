@@ -49,7 +49,7 @@ func bitCodeOpen(b geo.Bound, p geo.Point) (code int) {
 	return
 }
 
-// intersect a segment against one of the 4 lines that make up the bbox
+// intersect returns a segment against one of the 4 lines that make up the bbox.
 func intersect(box geo.Bound, edge int, a, b geo.Point) geo.Point {
 	if edge&8 != 0 { // top
 		return geo.Point{a[0] + (b[0]-a[0])*(box.Max[1]-a[1])/(b[1]-a[1]), box.Max[1]}
@@ -62,4 +62,67 @@ func intersect(box geo.Bound, edge int, a, b geo.Point) geo.Point {
 	} else {
 		panic("no edge??")
 	}
+}
+
+// line — clip a line into a set of lines along the bounding box boundary.
+func line(box geo.Bound, in geo.LineString, open bool) geo.MultiLineString {
+	if len(in) == 0 {
+		return nil
+	}
+
+	var codeA int
+	if open {
+		codeA = bitCodeOpen(box, in[0])
+	} else {
+		codeA = bitCode(box, in[0])
+	}
+
+	var line int
+	var out geo.MultiLineString
+	loopTo := len(in)
+	for i := 1; i < loopTo; i++ {
+		var codeB int
+		a := in[i-1]
+		b := in[i]
+		if open {
+			codeB = bitCodeOpen(box, b)
+		} else {
+			codeB = bitCode(box, b)
+		}
+		endCode := codeB
+
+		// loops through all the intersection of the line and box
+		// eg. across a corner could have two intersections
+		for {
+			if codeA|codeB == 0 {
+				// both points are in the box, accept
+				out = push(out, line, a)
+				if codeB != endCode { // segment went outside
+					out = push(out, line, b)
+					if i < loopTo-1 {
+						line++
+					}
+				} else if i == loopTo-1 {
+					out = push(out, line, b)
+				}
+				break
+			} else if codeA&codeB != 0 {
+				// both on one side of the box.
+				// segment not part of the final result.
+				break
+			} else if codeA != 0 {
+				// A is outside, B is inside, clip edge
+				a = intersect(box, codeA, a, b)
+				codeA = bitCode(box, a)
+			} else {
+				// B is outside, A is inside, clip edge
+				b = intersect(box, codeB, a, b)
+				codeB = bitCode(box, b)
+			}
+		}
+
+		codeA = endCode // new start is the old end
+	}
+
+	return out
 }
