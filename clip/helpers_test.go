@@ -93,3 +93,74 @@ func TestMultiLineString(t *testing.T) {
 		})
 	}
 }
+
+func TestBound(t *testing.T) {
+	cases := []struct {
+		name string
+		b1   geo.Bound
+		b2   geo.Bound
+		rs   geo.Bound
+	}{
+		{
+			name: "normal intersection",
+			b1:   geo.Bound{Min: geo.Point{0, 1}, Max: geo.Point{3, 4}},
+			b2:   geo.Bound{Min: geo.Point{1, 2}, Max: geo.Point{4, 5}},
+			rs:   geo.Bound{Min: geo.Point{1, 2}, Max: geo.Point{3, 4}},
+		},
+		{
+			name: "1 contains 2",
+			b1:   geo.Bound{Min: geo.Point{0, 1}, Max: geo.Point{3, 4}},
+			b2:   geo.Bound{Min: geo.Point{1, 2}, Max: geo.Point{2, 3}},
+			rs:   geo.Bound{Min: geo.Point{1, 2}, Max: geo.Point{2, 3}},
+		},
+		{
+			name: "no overlap",
+			b1:   geo.Bound{Min: geo.Point{0, 1}, Max: geo.Point{3, 4}},
+			b2:   geo.Bound{Min: geo.Point{4, 5}, Max: geo.Point{5, 6}},
+			rs:   geo.Bound{Min: geo.Point{1, 1}, Max: geo.Point{0, 0}}, // empty
+		},
+		{
+			name: "same bound",
+			b1:   geo.Bound{Min: geo.Point{0, 1}, Max: geo.Point{3, 4}},
+			b2:   geo.Bound{Min: geo.Point{0, 1}, Max: geo.Point{3, 4}},
+			rs:   geo.Bound{Min: geo.Point{0, 1}, Max: geo.Point{3, 4}},
+		},
+		{
+			name: "1 is empty",
+			b1:   geo.Bound{Min: geo.Point{1, 1}, Max: geo.Point{0, 0}},
+			b2:   geo.Bound{Min: geo.Point{0, 1}, Max: geo.Point{3, 4}},
+			rs:   geo.Bound{Min: geo.Point{0, 1}, Max: geo.Point{3, 4}},
+		},
+		{
+			name: "both are empty",
+			b1:   geo.Bound{Min: geo.Point{1, 1}, Max: geo.Point{0, 0}},
+			b2:   geo.Bound{Min: geo.Point{1, 1}, Max: geo.Point{0, 0}},
+			rs:   geo.Bound{Min: geo.Point{1, 1}, Max: geo.Point{0, 0}},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r1 := Bound(tc.b1, tc.b2)
+			r2 := Bound(tc.b1, tc.b2)
+			if tc.rs.IsEmpty() && (!r1.IsEmpty() || !r2.IsEmpty()) {
+				t.Errorf("should be empty")
+				t.Logf("%v", r1)
+				t.Logf("%v", r2)
+			}
+
+			if !tc.rs.IsEmpty() {
+				if !r1.Equal(tc.rs) {
+					t.Errorf("r1 not equal")
+					t.Logf("%v", r1)
+					t.Logf("%v", tc.rs)
+				}
+				if !r2.Equal(tc.rs) {
+					t.Errorf("r2 not equal")
+					t.Logf("%v", r2)
+					t.Logf("%v", tc.rs)
+				}
+			}
+		})
+	}
+}
