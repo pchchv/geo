@@ -164,3 +164,49 @@ func TestBound(t *testing.T) {
 		})
 	}
 }
+
+func TestGeometry(t *testing.T) {
+	bound := geo.Bound{Min: geo.Point{-1, -1}, Max: geo.Point{1, 1}}
+	for _, g := range geo.AllGeometries {
+		Geometry(bound, g)
+	}
+
+	cases := []struct {
+		name   string
+		input  geo.Geometry
+		output geo.Geometry
+	}{
+		{
+			name:   "only one multipoint in bound",
+			input:  geo.MultiPoint{{0, 0}, {5, 5}},
+			output: geo.Point{0, 0},
+		},
+		{
+			name: "only one multilinestring in bound",
+			input: geo.MultiLineString{
+				{{0, 0}, {5, 5}},
+				{{6, 6}, {7, 7}},
+			},
+			output: geo.LineString{{0, 0}, {1, 1}},
+		},
+		{
+			name: "only one multipolygon in bound",
+			input: geo.MultiPolygon{
+				{{{0, 0}, {1, 0}, {1, 1}, {0, 1}, {0, 0}}},
+				{{{2, 2}, {3, 2}, {3, 3}, {2, 3}, {2, 2}}},
+			},
+			output: geo.Polygon{{{0, 0}, {1, 0}, {1, 1}, {0, 1}, {0, 0}}},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := Geometry(bound, tc.input)
+			if !geo.Equal(result, tc.output) {
+				t.Errorf("not equal")
+				t.Logf("%v", result)
+				t.Logf("%v", tc.output)
+			}
+		})
+	}
+}
