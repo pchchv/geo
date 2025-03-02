@@ -1,6 +1,7 @@
 package clip
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/pchchv/geo"
@@ -143,4 +144,67 @@ func Collection(b geo.Bound, c geo.Collection) (result geo.Collection) {
 	}
 
 	return
+}
+
+// Geometry will clip the geometry to the bounding box
+// using the correct functions for the type.
+// This operation will modify the input of '1d or 2d geometry' by
+// using as a scratch space so clone if necessary.
+func Geometry(b geo.Bound, g geo.Geometry) geo.Geometry {
+	if g == nil || !b.Intersects(g.Bound()) {
+		return nil
+	}
+
+	switch g := g.(type) {
+	case geo.Point:
+		return g // intersect check above
+	case geo.MultiPoint:
+		if mp := MultiPoint(b, g); len(mp) == 1 {
+			return mp[0]
+		} else if mp == nil {
+			return nil
+		} else {
+			return mp
+		}
+	case geo.LineString:
+		if mls := LineString(b, g); len(mls) == 1 {
+			return mls[0]
+		} else if len(mls) == 0 {
+			return nil
+		} else {
+			return mls
+		}
+	case geo.MultiLineString:
+		if mls := MultiLineString(b, g); len(mls) == 1 {
+			return mls[0]
+		} else if mls == nil {
+			return nil
+		} else {
+			return mls
+		}
+	case geo.Ring:
+		return Ring(b, g)
+	case geo.Polygon:
+		return Polygon(b, g)
+	case geo.MultiPolygon:
+		if mp := MultiPolygon(b, g); len(mp) == 1 {
+			return mp[0]
+		} else if mp == nil {
+			return nil
+		} else {
+			return mp
+		}
+	case geo.Collection:
+		if c := Collection(b, g); len(c) == 1 {
+			return c[0]
+		} else if c == nil {
+			return nil
+		} else {
+			return c
+		}
+	case geo.Bound:
+		return Bound(b, g)
+	default:
+		panic(fmt.Sprintf("geometry type not supported: %T", g))
+	}
 }
