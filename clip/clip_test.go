@@ -166,3 +166,88 @@ func TestInternalRing(t *testing.T) {
 		})
 	}
 }
+
+func TestRing_CompletelyOutside(t *testing.T) {
+	cases := []struct {
+		name   string
+		bound  geo.Bound
+		input  geo.Ring
+		output geo.Ring
+	}{
+		{
+			name:  "bound in lower left",
+			bound: geo.Bound{Min: geo.Point{-1, -1}, Max: geo.Point{0, 0}},
+			input: geo.Ring{
+				{1, 1}, {2, 1}, {2, 2}, {1, 2}, {1, 1},
+			},
+			output: nil,
+		},
+		{
+			name:  "bound in lower right",
+			bound: geo.Bound{Min: geo.Point{3, -1}, Max: geo.Point{4, 0}},
+			input: geo.Ring{
+				{1, 1}, {2, 1}, {2, 2}, {1, 2}, {1, 1},
+			},
+			output: nil,
+		},
+		{
+			name:  "bound in upper right",
+			bound: geo.Bound{Min: geo.Point{3, 3}, Max: geo.Point{4, 4}},
+			input: geo.Ring{
+				{1, 1}, {2, 1}, {2, 2}, {1, 2}, {1, 1},
+			},
+			output: nil,
+		},
+		{
+			name:  "bound in upper left",
+			bound: geo.Bound{Min: geo.Point{-1, 3}, Max: geo.Point{0, 4}},
+			input: geo.Ring{
+				{1, 1}, {2, 1}, {2, 2}, {1, 2}, {1, 1},
+			},
+			output: nil,
+		},
+		{
+			name:  "bound to the left",
+			bound: geo.Bound{Min: geo.Point{-1, -1}, Max: geo.Point{0, 3}},
+			input: geo.Ring{
+				{1, 1}, {2, 1}, {2, 2}, {1, 2}, {1, 1},
+			},
+			output: nil,
+		},
+		{
+			name:  "bound to the right",
+			bound: geo.Bound{Min: geo.Point{3, -1}, Max: geo.Point{4, 3}},
+			input: geo.Ring{
+				{1, 1}, {2, 1}, {2, 2}, {1, 2}, {1, 1},
+			},
+			output: nil,
+		},
+		{
+			name:  "bound to the top",
+			bound: geo.Bound{Min: geo.Point{-1, 3}, Max: geo.Point{3, 3}},
+			input: geo.Ring{
+				{1, 1}, {2, 1}, {2, 2}, {1, 2}, {1, 1},
+			},
+			output: nil,
+		},
+		{
+			name:  "bound to the bottom",
+			bound: geo.Bound{Min: geo.Point{-1, -1}, Max: geo.Point{3, 0}},
+			input: geo.Ring{
+				{1, 1}, {2, 1}, {2, 2}, {1, 2}, {1, 1},
+			},
+			output: nil,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := Ring(tc.bound, tc.input)
+			if !reflect.DeepEqual(result, tc.output) {
+				t.Errorf("incorrect clip")
+				t.Logf("%v %+v", result == nil, result)
+				t.Logf("%v %+v", tc.output == nil, tc.output)
+			}
+		})
+	}
+}
