@@ -48,3 +48,18 @@ func bitCodeOpen(b geo.Bound, p geo.Point) (code int) {
 
 	return
 }
+
+// intersect a segment against one of the 4 lines that make up the bbox
+func intersect(box geo.Bound, edge int, a, b geo.Point) geo.Point {
+	if edge&8 != 0 { // top
+		return geo.Point{a[0] + (b[0]-a[0])*(box.Max[1]-a[1])/(b[1]-a[1]), box.Max[1]}
+	} else if edge&4 != 0 { // bottom
+		return geo.Point{a[0] + (b[0]-a[0])*(box.Min[1]-a[1])/(b[1]-a[1]), box.Min[1]}
+	} else if edge&2 != 0 { // right
+		return geo.Point{box.Max[0], a[1] + (b[1]-a[1])*(box.Max[0]-a[0])/(b[0]-a[0])}
+	} else if edge&1 != 0 { // left
+		return geo.Point{box.Min[0], a[1] + (b[1]-a[1])*(box.Min[0]-a[0])/(b[0]-a[0])}
+	} else {
+		panic("no edge??")
+	}
+}
