@@ -126,3 +126,66 @@ func line(box geo.Bound, in geo.LineString, open bool) geo.MultiLineString {
 
 	return out
 }
+
+// ring — clip the Ring into a smaller ring around the bounding box boundary.
+func ring(box geo.Bound, in geo.Ring) (out geo.Ring) {
+	if len(in) == 0 {
+		return in
+	}
+
+	f := in[0]
+	l := in[len(in)-1]
+	initClosed := false
+	if f == l {
+		initClosed = true
+	}
+
+	for edge := 1; edge <= 8; edge <<= 1 {
+		out = out[:0]
+		loopTo := len(in)
+		// if we're not a nice closed ring, don't implicitly close it.
+		prev := in[loopTo-1]
+		if !initClosed {
+			prev = in[0]
+		}
+
+		prevInside := bitCode(box, prev)&edge == 0
+		for i := 0; i < loopTo; i++ {
+			p := in[i]
+			inside := bitCode(box, p)&edge == 0
+
+			// if segment goes through the clip window, add an intersection
+			if inside != prevInside {
+				i := intersect(box, edge, prev, p)
+				out = append(out, i)
+			}
+			if inside {
+				out = append(out, p)
+			}
+
+			prev = p
+			prevInside = inside
+		}
+
+		if len(out) == 0 {
+			return nil
+		}
+
+		in, out = out, in
+	}
+
+	out = in // swap back
+	if initClosed {
+		// need to make sure our output is also closed.
+		if l := len(out); l != 0 {
+			f := out[0]
+			l := out[l-1]
+
+			if f != l {
+				out = append(out, f)
+			}
+		}
+	}
+
+	return out
+}
