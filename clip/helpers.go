@@ -1,6 +1,10 @@
 package clip
 
-import "github.com/pchchv/geo"
+import (
+	"math"
+
+	"github.com/pchchv/geo"
+)
 
 // Ring clips the ring to the bounding box and returns another ring.
 // This operation will modify the input by
@@ -104,4 +108,25 @@ func MultiPoint(b geo.Bound, mp geo.MultiPoint) (result geo.MultiPoint) {
 	}
 
 	return
+}
+
+// Bound intersects the two bounds.
+// May result in an empty/degenerate bound.
+func Bound(b, bound geo.Bound) geo.Bound {
+	if b.IsEmpty() {
+		return bound
+	} else if bound.IsEmpty() {
+		return b
+	}
+
+	return geo.Bound{
+		Min: geo.Point{
+			math.Max(b.Min[0], bound.Min[0]),
+			math.Max(b.Min[1], bound.Min[1]),
+		},
+		Max: geo.Point{
+			math.Min(b.Max[0], bound.Max[0]),
+			math.Min(b.Max[1], bound.Max[1]),
+		},
+	}
 }
