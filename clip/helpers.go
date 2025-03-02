@@ -94,3 +94,14 @@ func MultiPolygon(b geo.Bound, mp geo.MultiPolygon) (result geo.MultiPolygon) {
 
 	return
 }
+
+// MultiPoint returns a new set with the points outside the bound removed.
+func MultiPoint(b geo.Bound, mp geo.MultiPoint) (result geo.MultiPoint) {
+	for _, p := range mp {
+		if b.Contains(p) {
+			result = append(result, p)
+		}
+	}
+
+	return
+}
