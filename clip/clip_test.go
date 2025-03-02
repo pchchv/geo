@@ -251,3 +251,123 @@ func TestRing_CompletelyOutside(t *testing.T) {
 		})
 	}
 }
+
+func TestLineString(t *testing.T) {
+	cases := []struct {
+		name   string
+		bound  geo.Bound
+		input  geo.LineString
+		output geo.MultiLineString
+	}{
+		{
+			name:  "clips line crossign many times",
+			bound: geo.Bound{Min: geo.Point{0, 0}, Max: geo.Point{20, 20}},
+			input: geo.LineString{
+				{10, -10}, {10, 30}, {20, 30}, {20, -10},
+			},
+			output: geo.MultiLineString{
+				{{10, 0}, {10, 20}},
+				{{20, 20}, {20, 0}},
+			},
+		},
+		{
+			name:  "touches the sides a bunch of times",
+			bound: geo.Bound{Min: geo.Point{1, 1}, Max: geo.Point{6, 6}},
+			input: geo.LineString{{2, 3}, {1, 4}, {2, 5}, {2, 6}, {3, 5}, {4, 6}, {5, 5}, {5, 7}, {0, 7}, {0, 3}, {2, 3}},
+			output: geo.MultiLineString{
+				{{2, 3}, {1, 4}, {2, 5}, {2, 6}, {3, 5}, {4, 6}, {5, 5}, {5, 6}},
+				{{1, 3}, {2, 3}},
+			},
+		},
+		{
+			name:  "floating point example",
+			bound: geo.Bound{Min: geo.Point{-91.93359375, 42.29356419217009}, Max: geo.Point{-91.7578125, 42.42345651793831}},
+			input: geo.LineString{
+				{-86.66015624999999, 42.22851735620852}, {-81.474609375, 38.51378825951165},
+				{-85.517578125, 37.125286284966776}, {-85.8251953125, 38.95940879245423},
+				{-90.087890625, 39.53793974517628}, {-91.93359375, 42.32606244456202},
+				{-86.66015624999999, 42.22851735620852},
+			},
+			output: geo.MultiLineString{
+				{
+					{-91.91208030440808, 42.29356419217009},
+					{-91.93359375, 42.32606244456202},
+					{-91.7578125, 42.3228109416169},
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := LineString(tc.bound, tc.input)
+			if !reflect.DeepEqual(result, tc.output) {
+				t.Errorf("incorrect clip")
+				t.Logf("%v", result)
+				t.Logf("%v", tc.output)
+			}
+		})
+	}
+}
+
+func TestLineString_OpenBound(t *testing.T) {
+	cases := []struct {
+		name   string
+		bound  geo.Bound
+		input  geo.LineString
+		output geo.MultiLineString
+	}{
+		{
+			name:  "clips line crossign many times",
+			bound: geo.Bound{Min: geo.Point{0, 0}, Max: geo.Point{20, 20}},
+			input: geo.LineString{
+				{10, -10}, {10, 30}, {20, 30}, {20, -10},
+			},
+			output: geo.MultiLineString{
+				{{10, 0}, {10, 20}},
+			},
+		},
+		{
+			name:  "touches the sides a bunch of times",
+			bound: geo.Bound{Min: geo.Point{1, 1}, Max: geo.Point{6, 6}},
+			input: geo.LineString{{2, 3}, {1, 4}, {2, 5}, {2, 6}, {3, 5}, {4, 6}, {5, 5}, {5, 7}, {0, 7}, {0, 3}, {2, 3}},
+			output: geo.MultiLineString{
+				{{2, 3}, {1, 4}},
+				{{1, 4}, {2, 5}, {2, 6}},
+				{{2, 6}, {3, 5}, {4, 6}},
+				{{4, 6}, {5, 5}, {5, 6}},
+				{{1, 3}, {2, 3}},
+			},
+		},
+		{
+			name:  "floating point example",
+			bound: geo.Bound{Min: geo.Point{-91.93359375, 42.29356419217009}, Max: geo.Point{-91.7578125, 42.42345651793831}},
+			input: geo.LineString{
+				{-86.66015624999999, 42.22851735620852}, {-81.474609375, 38.51378825951165},
+				{-85.517578125, 37.125286284966776}, {-85.8251953125, 38.95940879245423},
+				{-90.087890625, 39.53793974517628}, {-91.93359375, 42.32606244456202},
+				{-86.66015624999999, 42.22851735620852},
+			},
+			output: geo.MultiLineString{
+				{
+					{-91.91208030440808, 42.29356419217009},
+					{-91.93359375, 42.32606244456202},
+				}, {
+					{-91.93359375, 42.32606244456202},
+					{-91.7578125, 42.3228109416169},
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := LineString(tc.bound, tc.input, OpenBound(true))
+			if !reflect.DeepEqual(result, tc.output) {
+				t.Errorf("incorrect clip")
+				t.Logf("%v", result)
+				t.Logf("%v", tc.output)
+			}
+		})
+	}
+}
