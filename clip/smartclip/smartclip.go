@@ -1,6 +1,8 @@
 package smartclip
 
 import (
+	"sort"
+
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/clip"
 )
@@ -190,4 +192,90 @@ func clipRings(box geo.Bound, rings []geo.Ring) (open []geo.LineString, closed [
 	}
 
 	return result[:at], closed
+}
+
+// smartWrap takes the open lineStrings with endpoints on the boundary and connects them correctly.
+func smartWrap(box geo.Bound, input []geo.LineString, o geo.Orientation) (result geo.MultiPolygon) {
+	points := make([]*endpoint, 0, 2*len(input)+2)
+	for i, r := range input {
+		// start
+		points = append(points, &endpoint{
+			Point:    r[0],
+			Start:    true,
+			Side:     pointSide(box, r[0]),
+			Index:    i,
+			OtherEnd: 2*i + 1,
+		})
+
+		// end
+		points = append(points, &endpoint{
+			Point:    r[len(r)-1],
+			Start:    false,
+			Side:     pointSide(box, r[len(r)-1]),
+			Index:    i,
+			OtherEnd: 2 * i,
+		})
+	}
+
+	if o == geo.CCW {
+		sort.Sort(&sortableEndpoints{
+			mls: input,
+			eps: points,
+		})
+	} else {
+		sort.Sort(sort.Reverse(&sortableEndpoints{
+			mls: input,
+			eps: points,
+		}))
+	}
+
+	var current geo.Ring
+	// this operation is O(n^2)
+	// it is technically possible to use a linked list and remove points instead of marking them as “used”
+	// however, since n is 2 times the number of segments, lets not do this
+	for i := 0; i < 2*len(points); i++ {
+		ep := points[i%len(points)]
+		if ep.Used {
+			continue
+		}
+
+		if !ep.Start {
+			if len(current) == 0 {
+				current = geo.Ring(input[ep.Index])
+				ep.Used = true
+			}
+			continue
+		}
+
+		if len(current) == 0 {
+			continue
+		}
+		ep.Used = true
+
+		// previous was end, connect to this start
+		var r geo.Ring
+		if ep.Point == current[len(current)-1] {
+			r = geo.Ring{{}, {}}
+		} else {
+			r = aroundBound(box, geo.Ring{ep.Point, current[len(current)-1]}, o)
+		}
+
+		if ep.Point.Equal(current[0]) {
+			// loop complete!!
+			current = append(current, r[2:]...)
+			result = append(result, geo.Polygon{current})
+			current = nil
+			i = -1 // start over looking for unused endpoints
+		} else {
+			if len(r) > 2 {
+				current = append(current, r[2:len(r)-1]...)
+			}
+
+			current = append(current, input[ep.Index]...)
+			points[ep.OtherEnd].Used = true
+			i = ep.OtherEnd
+		}
+	}
+
+	return
 }
