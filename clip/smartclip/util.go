@@ -105,3 +105,15 @@ func flipRing(i int, r geo.Ring) {
 		r[i][1] *= ym
 	}
 }
+
+func flipPolygon(i int, p geo.Polygon) {
+	for _, r := range p {
+		flipRing(i, r)
+	}
+}
+
+func flipMultiPolygon(i int, mp geo.MultiPolygon) {
+	for _, p := range mp {
+		flipPolygon(i, p)
+	}
+}
