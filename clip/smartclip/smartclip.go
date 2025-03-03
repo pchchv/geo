@@ -279,3 +279,77 @@ func smartWrap(box geo.Bound, input []geo.LineString, o geo.Orientation) (result
 
 	return
 }
+
+// Polygon will smart clip a polygon to the bound.
+// Rings that are NOT closed AND have an endpoint in the bound will be implicitly closed.
+func Polygon(box geo.Bound, p geo.Polygon, o geo.Orientation) geo.MultiPolygon {
+	if len(p) == 0 {
+		return nil
+	}
+
+	open, closed := clipRings(box, p)
+	if len(open) == 0 {
+		// nothing was clipped
+		if len(closed) == 0 {
+			return nil // everything outside bound
+		}
+
+		return geo.MultiPolygon{p} // everything inside bound
+	}
+
+	result := smartWrap(box, open, o)
+	if len(result) == 1 {
+		result[0] = append(result[0], closed...)
+	} else {
+		for _, i := range closed {
+			result = addToMultiPolygon(result, i)
+		}
+	}
+
+	return result
+}
+
+// MultiPolygon will smart clip a multipolygon to the bound.
+// Rings that are NOT closed AND have an endpoint in the bound will be implicitly closed.
+func MultiPolygon(box geo.Bound, mp geo.MultiPolygon, o geo.Orientation) geo.MultiPolygon {
+	if len(mp) == 0 {
+		return nil
+	}
+
+	// outer rings
+	outerRings := make([]geo.Ring, 0, len(mp))
+	for _, p := range mp {
+		outerRings = append(outerRings, p[0])
+	}
+
+	outers, closedOuters := clipRings(box, outerRings)
+	if len(outers) == 0 {
+		// nothing was clipped
+		if len(closedOuters) == 0 {
+			return nil // everything outside bound
+		}
+
+		return mp // everything inside bound
+	}
+
+	// inner rings
+	var innerRings []geo.Ring
+	for _, p := range mp {
+		for _, r := range p[1:] {
+			innerRings = append(innerRings, r)
+		}
+	}
+
+	inners, closedInners := clipRings(box, innerRings)
+	// smart wrap everything that touches the edges
+	result := smartWrap(box, append(outers, inners...), o)
+	for _, o := range closedOuters {
+		result = append(result, geo.Polygon{o})
+	}
+
+	for _, i := range closedInners {
+		result = addToMultiPolygon(result, i)
+	}
+
+	return result
+}
