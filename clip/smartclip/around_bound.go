@@ -23,3 +23,27 @@ func bitCodeOpen(b geo.Bound, p geo.Point) (code int) {
 
 	return
 }
+
+// pointFor returns a representative point for the side of the given bitCode.
+func pointFor(b geo.Bound, code int) geo.Point {
+	switch code {
+	case 1:
+		return geo.Point{b.Min[0], (b.Max[1] + b.Min[1]) / 2}
+	case 2:
+		return geo.Point{b.Max[0], (b.Max[1] + b.Min[1]) / 2}
+	case 4:
+		return geo.Point{(b.Max[0] + b.Min[0]) / 2, b.Min[1]}
+	case 5:
+		return geo.Point{b.Min[0], b.Min[1]}
+	case 6:
+		return geo.Point{b.Max[0], b.Min[1]}
+	case 8:
+		return geo.Point{(b.Max[0] + b.Min[0]) / 2, b.Max[1]}
+	case 9:
+		return geo.Point{b.Min[0], b.Max[1]}
+	case 10:
+		return geo.Point{b.Max[0], b.Max[1]}
+	default:
+		panic("invalid code")
+	}
+}
