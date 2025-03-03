@@ -2,6 +2,8 @@ package smartclip
 
 import "github.com/pchchv/geo"
 
+const notOnSide = 0xFF
+
 type endpoint struct {
 	Point    geo.Point
 	Start    bool
@@ -69,4 +71,25 @@ func (e *sortableEndpoints) Len() int {
 func (e *sortableEndpoints) Swap(i, j int) {
 	e.eps[e.eps[i].OtherEnd].OtherEnd, e.eps[e.eps[j].OtherEnd].OtherEnd = j, i
 	e.eps[i], e.eps[j] = e.eps[j], e.eps[i]
+}
+
+//	 4
+//	+-+
+//
+// 1 | | 3
+//
+//	+-+
+//	 2
+func pointSide(b geo.Bound, p geo.Point) uint8 {
+	if p[1] == b.Max[1] {
+		return 4
+	} else if p[1] == b.Min[1] {
+		return 2
+	} else if p[0] == b.Max[0] {
+		return 3
+	} else if p[0] == b.Min[0] {
+		return 1
+	} else {
+		return notOnSide
+	}
 }
