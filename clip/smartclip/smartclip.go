@@ -353,3 +353,25 @@ func MultiPolygon(box geo.Bound, mp geo.MultiPolygon, o geo.Orientation) geo.Mul
 
 	return result
 }
+
+// Ring will smart clip a ring to the boundary.
+// This may result multiple rings so a multipolygon is possible.
+// Rings that are NOT closed AND have an endpoint in the bound will be implicitly closed.
+func Ring(box geo.Bound, r geo.Ring, o geo.Orientation) geo.MultiPolygon {
+	if len(r) == 0 {
+		return nil
+	}
+
+	open, closed := clipRings(box, []geo.Ring{r})
+	if len(open) == 0 {
+		// nothing was clipped
+		if len(closed) == 0 {
+			return nil // everything outside bound
+		}
+
+		return geo.MultiPolygon{{r}} // everything inside bound
+	}
+
+	// in a well defined ring there will be no closed sections
+	return smartWrap(box, open, o)
+}
