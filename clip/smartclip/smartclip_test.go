@@ -333,3 +333,138 @@ func TestClipMultiPolygon(t *testing.T) {
 		}
 	}
 }
+
+func TestRing(t *testing.T) {
+	oneSix := geo.Bound{Min: geo.Point{1, 1}, Max: geo.Point{6, 6}}
+
+	cases := []struct {
+		name     string
+		bound    geo.Bound
+		input    geo.Ring
+		expected geo.MultiPolygon
+	}{
+		{
+			name:     "outside the bound",
+			bound:    oneSix,
+			input:    geo.Ring{{12, 2}, {13, 2}, {13, 3}, {12, 3}, {12, 2}},
+			expected: nil,
+		},
+		{
+			name:     "inside the bound",
+			bound:    oneSix,
+			input:    geo.Ring{{2, 2}, {3, 2}, {3, 3}, {2, 3}, {2, 2}},
+			expected: geo.MultiPolygon{{{{2, 2}, {3, 2}, {3, 3}, {2, 3}, {2, 2}}}},
+		},
+		{
+			name:     "not closed with endpoints inside bound",
+			bound:    oneSix,
+			input:    geo.Ring{{2, 2}, {8, 2}, {8, 3}, {2, 3}},
+			expected: geo.MultiPolygon{{{{2, 2}, {6, 2}, {6, 3}, {2, 3}, {2, 2}}}},
+		},
+		{
+			name:     "not closed with first endpoint inside bound",
+			bound:    oneSix,
+			input:    geo.Ring{{2, 2}, {8, 2}, {8, 3}, {0, 3}},
+			expected: geo.MultiPolygon{{{{6, 3}, {1, 3}, {1, 2.5}, {2, 2}, {6, 2}, {6, 3}}}},
+		},
+		{
+			name:     "not closed with last endpoint inside bound",
+			bound:    oneSix,
+			input:    geo.Ring{{0, 2}, {8, 2}, {8, 3}, {2, 3}},
+			expected: geo.MultiPolygon{{{{6, 3}, {2, 3}, {1, 2.5}, {1, 2}, {6, 2}, {6, 3}}}},
+		},
+		{
+			name:     "intersects one side",
+			bound:    oneSix,
+			input:    geo.Ring{{0, 2}, {2, 2}, {2, 3}, {0, 3}},
+			expected: geo.MultiPolygon{{{{1, 2}, {2, 2}, {2, 3}, {1, 3}, {1, 2}}}},
+		},
+		{
+			name:     "intersects one side long connect",
+			bound:    oneSix,
+			input:    geo.Ring{{0, 3}, {2, 3}, {2, 2}, {0, 2}},
+			expected: geo.MultiPolygon{{{{1, 3}, {2, 3}, {2, 2}, {1, 2}, {1, 1}, {3.5, 1}, {6, 1}, {6, 3.5}, {6, 6}, {3.5, 6}, {1, 6}, {1, 3}}}},
+		},
+		{
+			name:     "intersects one side with endpoints inside",
+			bound:    oneSix,
+			input:    geo.Ring{{2, 2}, {2, 3}, {0, 3}, {0, 2}, {2, 2}},
+			expected: geo.MultiPolygon{{{{1, 2}, {2, 2}, {2, 3}, {1, 3}, {1, 2}}}},
+		},
+		{
+			name:     "in one side out the other",
+			bound:    oneSix,
+			input:    geo.Ring{{0, 2}, {2, 2}, {2, 7}},
+			expected: geo.MultiPolygon{{{{1, 2}, {2, 2}, {2, 6}, {1, 6}, {1, 2}}}},
+		},
+		{
+			name:  "intersects two sides",
+			bound: oneSix,
+			input: geo.Ring{{0, 2}, {2, 2}, {2, 7}, {8, 7}, {8, 5}, {4, 5}, {4, 3}, {7, 3}},
+			expected: geo.MultiPolygon{
+				{{{6, 5}, {4, 5}, {4, 3}, {6, 3}, {6, 5}}},
+				{{{1, 2}, {2, 2}, {2, 6}, {1, 6}, {1, 2}}},
+			},
+		},
+		{
+			name:  "touches a side",
+			bound: oneSix,
+			input: geo.Ring{{1, 3}, {2, 2}, {3, 3}, {2, 4}, {1, 3}},
+			expected: geo.MultiPolygon{
+				{{{1, 3}, {2, 2}, {3, 3}, {2, 4}, {1, 3}}},
+			},
+		},
+		{
+			name:  "touches the sides a bunch of times",
+			bound: oneSix,
+			input: geo.Ring{{2, 3}, {1, 4}, {2, 5}, {2, 6}, {3, 5}, {4, 6}, {5, 5}, {5, 7}, {0, 7}, {0, 3}, {2, 3}},
+			expected: geo.MultiPolygon{
+				{{{1, 3}, {2, 3}, {1, 4}, {1, 3}}},
+				{{{4, 6}, {5, 5}, {5, 6}, {4, 6}}},
+				{{{2, 6}, {3, 5}, {4, 6}, {2, 6}}},
+				{{{1, 4}, {2, 5}, {2, 6}, {1, 6}, {1, 4}}},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		for i, s := range flips {
+			t.Run(tc.name+" - "+s, func(t *testing.T) {
+				o := geo.CCW
+				if i == 1 || i == 2 {
+					o = geo.CW
+				}
+				bound := flipBound(i, tc.bound)
+
+				input := tc.input.Clone()
+				flipRing(i, input)
+
+				expected := tc.expected.Clone()
+				flipMultiPolygon(i, expected)
+
+				result := Ring(bound, input.Clone(), o)
+				if !deepEqualMultiPolygon(result, expected) {
+					t.Errorf("incorrect ring")
+					t.Logf("%v", result)
+					t.Logf("%v", expected)
+				}
+
+				// should give same result if polygon
+				result = Polygon(bound, geo.Polygon{input.Clone()}, o)
+				if !deepEqualMultiPolygon(result, expected) {
+					t.Errorf("incorrect polygon")
+					t.Logf("%v", result)
+					t.Logf("%v", expected)
+				}
+
+				// should give same result if mulipolygon
+				result = MultiPolygon(bound, geo.MultiPolygon{{input}}, o)
+				if !deepEqualMultiPolygon(result, expected) {
+					t.Errorf("incorrect multipolygon")
+					t.Logf("%v", result)
+					t.Logf("%v", expected)
+				}
+			})
+		}
+	}
+}
