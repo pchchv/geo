@@ -61,3 +61,12 @@ func (e *sortableEndpoints) Less(i, j int) bool {
 		panic("unreachable")
 	}
 }
+
+func (e *sortableEndpoints) Len() int {
+	return len(e.eps)
+}
+
+func (e *sortableEndpoints) Swap(i, j int) {
+	e.eps[e.eps[i].OtherEnd].OtherEnd, e.eps[e.eps[j].OtherEnd].OtherEnd = j, i
+	e.eps[i], e.eps[j] = e.eps[j], e.eps[i]
+}
