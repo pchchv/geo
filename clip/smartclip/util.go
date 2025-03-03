@@ -71,3 +71,16 @@ func deepEqualMultiPolygon(mp1, mp2 geo.MultiPolygon) bool {
 
 	return true
 }
+
+func manipulation(i int) (xm, ym float64) {
+	xm, ym = 1.0, 1.0
+	if i&0x01 == 0x01 {
+		xm = -1.0
+	}
+
+	if i&0x02 == 0x02 {
+		ym = -1.0
+	}
+
+	return
+}
