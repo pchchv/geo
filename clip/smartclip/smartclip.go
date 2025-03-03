@@ -1,6 +1,9 @@
 package smartclip
 
-import "github.com/pchchv/geo"
+import (
+	"github.com/pchchv/geo"
+	"github.com/pchchv/geo/clip"
+)
 
 const notOnSide = 0xFF
 
@@ -130,4 +133,61 @@ func addToMultiPolygon(mp geo.MultiPolygon, ring geo.Ring) geo.MultiPolygon {
 	}
 
 	return mp
+}
+
+// clipRings will take a set of rings and clip them to the boundary.
+// It returns the open lineStrings with endpoints on the boundary and the closed interior rings.
+func clipRings(box geo.Bound, rings []geo.Ring) (open []geo.LineString, closed []geo.Ring) {
+	var result []geo.LineString
+	for _, r := range rings {
+		if !r.Closed() && (box.Contains(r[0]) || box.Contains(r[len(r)-1])) {
+			r = append(r, r[0])
+		}
+
+		out := clip.LineString(box, geo.LineString(r), clip.OpenBound(true))
+		if len(out) == 0 {
+			continue // outside of bound
+		}
+
+		if r.Closed() {
+			// if input is a closed ring whose endpoints are inside the bound, then join the sections
+			// this operation is O(n^2), but n is the number of segments, not edges
+			for i := 0; i < len(out); i++ {
+				end := out[i][len(out[i])-1]
+				if end[0] == box.Min[0] || box.Max[0] == end[0] || end[1] == box.Min[1] || box.Max[1] == end[1] {
+					// endpoint must be within the bound to try join
+					continue
+				}
+
+				for j := 0; j < len(out); j++ {
+					if i == j {
+						continue
+					}
+
+					if out[j][0] == end {
+						out[i] = append(out[i], out[j][1:]...)
+						i--
+						out[j] = out[len(out)-1]
+						out = out[:len(out)-1]
+					}
+				}
+			}
+		}
+
+		result = append(result, out...)
+	}
+
+	var at int
+	for _, ls := range result {
+		// closed ring, so completely inside bound
+		// unless it touches a boundary
+		if ls[0] == ls[len(ls)-1] && pointSide(box, ls[0]) == notOnSide {
+			closed = append(closed, geo.Ring(ls))
+		} else {
+			result[at] = ls
+			at++
+		}
+	}
+
+	return result[:at], closed
 }
