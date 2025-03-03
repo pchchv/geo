@@ -1,6 +1,7 @@
 package smartclip
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/pchchv/geo"
@@ -374,4 +375,50 @@ func Ring(box geo.Bound, r geo.Ring, o geo.Orientation) geo.MultiPolygon {
 
 	// in a well defined ring there will be no closed sections
 	return smartWrap(box, open, o)
+}
+
+// Geometry will do a smart more involved clipping and wrapping of the geometry.
+// It will return simple OGC geometries.
+// Rings that are NOT closed AND have an endpoint in the bound will be implicitly closed.
+func Geometry(box geo.Bound, g geo.Geometry, o geo.Orientation) geo.Geometry {
+	if g == nil {
+		return nil
+	}
+
+	if g.Dimensions() != 2 {
+		return clip.Geometry(box, g)
+	}
+
+	var mp geo.MultiPolygon
+	switch g := g.(type) {
+	case geo.Ring:
+		mp = Ring(box, g, o)
+	case geo.Polygon:
+		mp = Polygon(box, g, o)
+	case geo.MultiPolygon:
+		mp = MultiPolygon(box, g, o)
+	case geo.Bound:
+		return clip.Geometry(box, g)
+	case geo.Collection:
+		var result geo.Collection
+		for _, c := range g {
+			if c := Geometry(box, c, o); c != nil {
+				result = append(result, c)
+			}
+		}
+
+		if len(result) == 1 {
+			return result[0]
+		}
+
+		return result
+	default:
+		panic(fmt.Sprintf("geometry type not supported: %T", g))
+	}
+
+	if len(mp) == 1 {
+		return mp[0]
+	}
+
+	return mp
 }
