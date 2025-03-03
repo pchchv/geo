@@ -50,3 +50,10 @@ func TestSmartWrap(t *testing.T) {
 		})
 	}
 }
+
+func TestSmartClip(t *testing.T) {
+	bound := geo.Bound{Min: geo.Point{-1, -1}, Max: geo.Point{1, 1}}
+	for _, g := range geo.AllGeometries {
+		Geometry(bound, g, geo.CCW)
+	}
+}
