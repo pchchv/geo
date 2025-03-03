@@ -19,3 +19,8 @@ func (e *endpoint) Before(mls []geo.LineString) geo.Point {
 
 	return ls[len(ls)-2]
 }
+
+type sortableEndpoints struct {
+	mls []geo.LineString
+	eps []*endpoint
+}
