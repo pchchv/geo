@@ -10,3 +10,12 @@ type endpoint struct {
 	Index    int
 	OtherEnd int
 }
+
+func (e *endpoint) Before(mls []geo.LineString) geo.Point {
+	ls := mls[e.Index]
+	if e.Start {
+		return ls[0]
+	}
+
+	return ls[len(ls)-2]
+}
