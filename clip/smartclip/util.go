@@ -35,3 +35,39 @@ func deepEqualRing(r1, r2 geo.Ring) bool {
 
 	return true
 }
+
+func deepEqualPolygon(p1, p2 geo.Polygon) bool {
+	if len(p1) != len(p2) {
+		return false
+	}
+
+	for i := range p1 {
+		if !deepEqualRing(p1[i], p2[i]) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func deepEqualMultiPolygon(mp1, mp2 geo.MultiPolygon) bool {
+	if len(mp1) != len(mp2) {
+		return false
+	}
+
+	for _, p1 := range mp1 {
+		var found bool
+		for _, p2 := range mp2 {
+			if deepEqualPolygon(p1, p2) {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return false
+		}
+	}
+
+	return true
+}
