@@ -2,6 +2,8 @@ package smartclip
 
 import "github.com/pchchv/geo"
 
+var flips = []string{"reg", "flip over y", "flip over x", "flip over xy"}
+
 func deepEqualRing(r1, r2 geo.Ring) bool {
 	if len(r1) != len(r2) || r1[0] != r1[len(r1)-1] || r2[0] != r2[len(r2)-1] {
 		return false
