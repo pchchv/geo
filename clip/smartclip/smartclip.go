@@ -93,3 +93,41 @@ func pointSide(b geo.Bound, p geo.Point) uint8 {
 		return notOnSide
 	}
 }
+
+func polygonContains(outer geo.Ring, r geo.Ring) bool {
+	for _, p := range r {
+		var inside bool
+		x, y := p[0], p[1]
+		i, j := 0, len(outer)-1
+		for i < len(outer) {
+			xi, yi := outer[i][0], outer[i][1]
+			xj, yj := outer[j][0], outer[j][1]
+			if ((yi > y) != (yj > y)) &&
+				(x < (xj-xi)*(y-yi)/(yj-yi)+xi) {
+				inside = !inside
+			}
+
+			j = i
+			i++
+		}
+
+		if inside {
+			return true
+		}
+	}
+
+	return false
+}
+
+// addToMultiPolygon does a lookup to see which polygon the ring intersects.
+// This should work fine if the input is well formed.
+func addToMultiPolygon(mp geo.MultiPolygon, ring geo.Ring) geo.MultiPolygon {
+	for i := range mp {
+		if polygonContains(mp[i][0], ring) {
+			mp[i] = append(mp[i], ring)
+			return mp
+		}
+	}
+
+	return mp
+}
