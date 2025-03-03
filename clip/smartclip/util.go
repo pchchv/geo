@@ -84,3 +84,24 @@ func manipulation(i int) (xm, ym float64) {
 
 	return
 }
+
+func flipBound(i int, b geo.Bound) geo.Bound {
+	xm, ym := manipulation(i)
+	if xm == -1 {
+		b.Min[0], b.Max[0] = -1*b.Max[0], -1*b.Min[0]
+	}
+
+	if ym == -1 {
+		b.Min[1], b.Max[1] = -1*b.Max[1], -1*b.Min[1]
+	}
+
+	return b
+}
+
+func flipRing(i int, r geo.Ring) {
+	xm, ym := manipulation(i)
+	for i := range r {
+		r[i][0] *= xm
+		r[i][1] *= ym
+	}
+}
