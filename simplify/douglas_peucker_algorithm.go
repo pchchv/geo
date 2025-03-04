@@ -16,6 +16,31 @@ func DouglasPeucker(threshold float64) *DouglasPeuckerSimplifier {
 		Threshold: threshold,
 	}
 }
+
+func (s *DouglasPeuckerSimplifier) simplify(ls geo.LineString, area, wim bool) (geo.LineString, []int) {
+	var indexMap []int
+	mask := make([]byte, len(ls))
+	mask[0] = 1
+	mask[len(mask)-1] = 1
+	found := dpWorker(ls, s.Threshold, mask)
+	if wim {
+		indexMap = make([]int, 0, found)
+	}
+
+	var count int
+	for i, v := range mask {
+		if v == 1 {
+			ls[count] = ls[i]
+			count++
+			if wim {
+				indexMap = append(indexMap, i)
+			}
+		}
+	}
+
+	return ls[:count], indexMap
+}
+
 // dpWorker performs recursive threshold checks.
 func dpWorker(ls geo.LineString, threshold float64, mask []byte) int {
 	var stack []int
