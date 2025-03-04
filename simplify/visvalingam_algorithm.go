@@ -1,6 +1,10 @@
 package simplify
 
-import "math"
+import (
+	"math"
+
+	"github.com/pchchv/geo"
+)
 
 // VisvalingamSimplifier is a reducer that performs the vivalingham algorithm.
 type VisvalingamSimplifier struct {
@@ -37,4 +41,9 @@ func VisvalingamThreshold(threshold float64) *VisvalingamSimplifier {
 // However, it is still possible to create self-intersections when simplifying.
 func VisvalingamKeep(minPointsToKeep int) *VisvalingamSimplifier {
 	return Visvalingam(math.MaxFloat64, minPointsToKeep)
+}
+
+func doubleTriangleArea(ls geo.LineString, i1, i2, i3 int) float64 {
+	a, b, c := ls[i1], ls[i2], ls[i3]
+	return math.Abs((b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*(c[0]-a[0]))
 }
