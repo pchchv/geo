@@ -38,3 +38,11 @@ func VisvalingamThreshold(threshold float64) *VisvalingamSimplifier {
 func VisvalingamKeep(minPointsToKeep int) *VisvalingamSimplifier {
 	return Visvalingam(math.MaxFloat64, minPointsToKeep)
 }
+
+type visItem struct {
+	area       float64  // triangle area
+	pointIndex int      // index of point in original path
+	next       *visItem // to keep a virtual linked list to help restore the triangle areas when points are removed
+	previous   *visItem
+	index      int // internal index in heap, for removal and update
+}
