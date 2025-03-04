@@ -48,6 +48,21 @@ func (s *VisvalingamSimplifier) Simplify(g geo.Geometry) geo.Geometry {
 	return simplify(s, g)
 }
 
+// Ring will simplify the ring using this simplifier.
+func (s *VisvalingamSimplifier) Ring(r geo.Ring) geo.Ring {
+	return ring(s, r)
+}
+
+// LineString will simplify the linestring using this simplifier.
+func (s *VisvalingamSimplifier) LineString(ls geo.LineString) geo.LineString {
+	return lineString(s, ls)
+}
+
+// MultiLineString will simplify the multi-linestring using this simplifier.
+func (s *VisvalingamSimplifier) MultiLineString(mls geo.MultiLineString) geo.MultiLineString {
+	return multiLineString(s, mls)
+}
+
 func (s *VisvalingamSimplifier) simplify(ls geo.LineString, area, wim bool) (geo.LineString, []int) {
 	if len(ls) <= 1 {
 		return ls, nil
