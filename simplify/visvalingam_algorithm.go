@@ -43,6 +43,125 @@ func VisvalingamKeep(minPointsToKeep int) *VisvalingamSimplifier {
 	return Visvalingam(math.MaxFloat64, minPointsToKeep)
 }
 
+// Simplify will run the simplification for any geometry type.
+func (s *VisvalingamSimplifier) Simplify(g geo.Geometry) geo.Geometry {
+	return simplify(s, g)
+}
+
+func (s *VisvalingamSimplifier) simplify(ls geo.LineString, area, wim bool) (geo.LineString, []int) {
+	if len(ls) <= 1 {
+		return ls, nil
+	}
+
+	toKeep := s.ToKeep
+	if toKeep == 0 {
+		if area {
+			if ls[0] == ls[len(ls)-1] {
+				toKeep = 4
+			} else {
+				toKeep = 3
+			}
+		} else {
+			toKeep = 2
+		}
+	}
+
+	var indexMap []int
+	if len(ls) <= toKeep {
+		if wim {
+			// create identify map
+			indexMap = make([]int, len(ls))
+			for i := range ls {
+				indexMap[i] = i
+			}
+		}
+		return ls, indexMap
+	}
+
+	var removed int
+	// edge cases checked, get on with it
+	threshold := s.Threshold * 2                  // triangle area is doubled to save the multiply :)
+	heap := minHeap(make([]*visItem, 0, len(ls))) // build the initial minheap linked list
+	linkedListStart := &visItem{
+		area:       math.Inf(1),
+		pointIndex: 0,
+	}
+	heap.Push(linkedListStart)
+
+	// internal path items
+	items := make([]visItem, len(ls))
+	previous := linkedListStart
+	for i := 1; i < len(ls)-1; i++ {
+		item := &items[i]
+		item.area = doubleTriangleArea(ls, i-1, i, i+1)
+		item.pointIndex = i
+		item.previous = previous
+		heap.Push(item)
+		previous.next = item
+		previous = item
+	}
+
+	// final item
+	endItem := &items[len(ls)-1]
+	endItem.area = math.Inf(1)
+	endItem.pointIndex = len(ls) - 1
+	endItem.previous = previous
+	previous.next = endItem
+	heap.Push(endItem)
+
+	// run through the reduction process
+	for len(heap) > 0 {
+		current := heap.Pop()
+		if current.area > threshold || len(ls)-removed <= toKeep {
+			break
+		}
+
+		next := current.next
+		previous := current.previous
+		// remove current element from linked list
+		previous.next = current.next
+		next.previous = current.previous
+		removed++
+
+		// figure out the new areas
+		if previous.previous != nil {
+			area := doubleTriangleArea(ls,
+				previous.previous.pointIndex,
+				previous.pointIndex,
+				next.pointIndex,
+			)
+
+			area = math.Max(area, current.area)
+			heap.Update(previous, area)
+		}
+
+		if next.next != nil {
+			area := doubleTriangleArea(ls,
+				previous.pointIndex,
+				next.pointIndex,
+				next.next.pointIndex,
+			)
+
+			area = math.Max(area, current.area)
+			heap.Update(next, area)
+		}
+	}
+
+	var count int
+	item := linkedListStart
+	for item != nil {
+		ls[count] = ls[item.pointIndex]
+		count++
+
+		if wim {
+			indexMap = append(indexMap, item.pointIndex)
+		}
+		item = item.next
+	}
+
+	return ls[:count], indexMap
+}
+
 func doubleTriangleArea(ls geo.LineString, i1, i2, i3 int) float64 {
 	a, b, c := ls[i1], ls[i2], ls[i3]
 	return math.Abs((b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*(c[0]-a[0]))
