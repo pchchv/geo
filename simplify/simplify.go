@@ -26,3 +26,33 @@ func multiLineString(s simplifier, mls geo.MultiLineString) geo.MultiLineString 
 
 	return mls
 }
+
+func polygon(s simplifier, p geo.Polygon) geo.Polygon {
+	var count int
+	for i := range p {
+		r := geo.Ring(runSimplify(s, geo.LineString(p[i]), true))
+		if i != 0 && len(r) <= 2 {
+			continue
+		}
+
+		p[count] = r
+		count++
+	}
+
+	return p[:count]
+}
+
+func multiPolygon(s simplifier, mp geo.MultiPolygon) geo.MultiPolygon {
+	var count int
+	for i := range mp {
+		p := polygon(s, mp[i])
+		if len(p[0]) <= 2 {
+			continue
+		}
+
+		mp[count] = p
+		count++
+	}
+
+	return mp[:count]
+}
