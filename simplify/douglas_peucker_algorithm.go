@@ -5,6 +5,8 @@ import (
 	"github.com/pchchv/geo/planar"
 )
 
+var _ geo.Simplifier = &DouglasPeuckerSimplifier{}
+
 // DouglasPeuckerSimplifier wraps the DouglasPeucker function.
 type DouglasPeuckerSimplifier struct {
 	Threshold float64
@@ -45,6 +47,11 @@ func (s *DouglasPeuckerSimplifier) Ring(r geo.Ring) geo.Ring {
 // Collection will simplify the collection using this simplifier.
 func (s *DouglasPeuckerSimplifier) Collection(c geo.Collection) geo.Collection {
 	return collection(s, c)
+}
+
+// Simplify will run the simplification for any geometry type.
+func (s *DouglasPeuckerSimplifier) Simplify(g geo.Geometry) geo.Geometry {
+	return simplify(s, g)
 }
 
 func (s *DouglasPeuckerSimplifier) simplify(ls geo.LineString, area, wim bool) (geo.LineString, []int) {
