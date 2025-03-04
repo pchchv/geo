@@ -27,6 +27,16 @@ func (s *DouglasPeuckerSimplifier) MultiLineString(mls geo.MultiLineString) geo.
 	return multiLineString(s, mls)
 }
 
+// Polygon will simplify the polygon using this simplifier.
+func (s *DouglasPeuckerSimplifier) Polygon(p geo.Polygon) geo.Polygon {
+	return polygon(s, p)
+}
+
+// MultiPolygon will simplify the multi-polygon using this simplifier.
+func (s *DouglasPeuckerSimplifier) MultiPolygon(mp geo.MultiPolygon) geo.MultiPolygon {
+	return multiPolygon(s, mp)
+}
+
 func (s *DouglasPeuckerSimplifier) simplify(ls geo.LineString, area, wim bool) (geo.LineString, []int) {
 	var indexMap []int
 	mask := make([]byte, len(ls))
