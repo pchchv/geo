@@ -49,3 +49,54 @@ type visItem struct {
 
 // minHeap creates a priority queue or min heap.
 type minHeap []*visItem
+
+func (h minHeap) up(i int) {
+	object := h[i]
+	for i > 0 {
+		up := ((i + 1) >> 1) - 1
+		parent := h[up]
+		if parent.area <= object.area {
+			break
+		}
+
+		// swap nodes
+		parent.index = i
+		h[i] = parent
+		object.index = up
+		h[up] = object
+		i = up
+	}
+}
+
+func (h minHeap) down(i int) {
+	object := h[i]
+	for {
+		right := (i + 1) << 1
+		left := right - 1
+		down := i
+		child := h[down]
+
+		// swap with smallest child
+		if left < len(h) && h[left].area < child.area {
+			down = left
+			child = h[down]
+		}
+
+		if right < len(h) && h[right].area < child.area {
+			down = right
+			child = h[down]
+		}
+
+		// non smaller, so quit
+		if down == i {
+			break
+		}
+
+		// swap the nodes
+		child.index = i
+		h[child.index] = child
+		object.index = down
+		h[down] = object
+		i = down
+	}
+}
