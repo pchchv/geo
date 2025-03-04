@@ -46,3 +46,6 @@ type visItem struct {
 	previous   *visItem
 	index      int // internal index in heap, for removal and update
 }
+
+// minHeap creates a priority queue or min heap.
+type minHeap []*visItem
