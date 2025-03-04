@@ -17,6 +17,16 @@ func DouglasPeucker(threshold float64) *DouglasPeuckerSimplifier {
 	}
 }
 
+// LineString will simplify the linestring using this simplifier.
+func (s *DouglasPeuckerSimplifier) LineString(ls geo.LineString) geo.LineString {
+	return lineString(s, ls)
+}
+
+// MultiLineString will simplify the multi-linestring using this simplifier.
+func (s *DouglasPeuckerSimplifier) MultiLineString(mls geo.MultiLineString) geo.MultiLineString {
+	return multiLineString(s, mls)
+}
+
 func (s *DouglasPeuckerSimplifier) simplify(ls geo.LineString, area, wim bool) (geo.LineString, []int) {
 	var indexMap []int
 	mask := make([]byte, len(ls))
