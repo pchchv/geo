@@ -6,6 +6,8 @@ import (
 	"github.com/pchchv/geo"
 )
 
+var _ geo.Simplifier = &VisvalingamSimplifier{}
+
 // VisvalingamSimplifier is a reducer that performs the vivalingham algorithm.
 type VisvalingamSimplifier struct {
 	Threshold float64
@@ -43,11 +45,6 @@ func VisvalingamKeep(minPointsToKeep int) *VisvalingamSimplifier {
 	return Visvalingam(math.MaxFloat64, minPointsToKeep)
 }
 
-// Simplify will run the simplification for any geometry type.
-func (s *VisvalingamSimplifier) Simplify(g geo.Geometry) geo.Geometry {
-	return simplify(s, g)
-}
-
 // Ring will simplify the ring using this simplifier.
 func (s *VisvalingamSimplifier) Ring(r geo.Ring) geo.Ring {
 	return ring(s, r)
@@ -61,6 +58,26 @@ func (s *VisvalingamSimplifier) LineString(ls geo.LineString) geo.LineString {
 // MultiLineString will simplify the multi-linestring using this simplifier.
 func (s *VisvalingamSimplifier) MultiLineString(mls geo.MultiLineString) geo.MultiLineString {
 	return multiLineString(s, mls)
+}
+
+// Polygon will simplify the polygon using this simplifier.
+func (s *VisvalingamSimplifier) Polygon(p geo.Polygon) geo.Polygon {
+	return polygon(s, p)
+}
+
+// MultiPolygon will simplify the multi-polygon using this simplifier.
+func (s *VisvalingamSimplifier) MultiPolygon(mp geo.MultiPolygon) geo.MultiPolygon {
+	return multiPolygon(s, mp)
+}
+
+// Collection will simplify the collection using this simplifier.
+func (s *VisvalingamSimplifier) Collection(c geo.Collection) geo.Collection {
+	return collection(s, c)
+}
+
+// Simplify will run the simplification for any geometry type.
+func (s *VisvalingamSimplifier) Simplify(g geo.Geometry) geo.Geometry {
+	return simplify(s, g)
 }
 
 func (s *VisvalingamSimplifier) simplify(ls geo.LineString, area, wim bool) (geo.LineString, []int) {
