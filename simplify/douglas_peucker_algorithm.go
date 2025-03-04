@@ -37,6 +37,16 @@ func (s *DouglasPeuckerSimplifier) MultiPolygon(mp geo.MultiPolygon) geo.MultiPo
 	return multiPolygon(s, mp)
 }
 
+// Ring will simplify the ring using this simplifier.
+func (s *DouglasPeuckerSimplifier) Ring(r geo.Ring) geo.Ring {
+	return ring(s, r)
+}
+
+// Collection will simplify the collection using this simplifier.
+func (s *DouglasPeuckerSimplifier) Collection(c geo.Collection) geo.Collection {
+	return collection(s, c)
+}
+
 func (s *DouglasPeuckerSimplifier) simplify(ls geo.LineString, area, wim bool) (geo.LineString, []int) {
 	var indexMap []int
 	mask := make([]byte, len(ls))
