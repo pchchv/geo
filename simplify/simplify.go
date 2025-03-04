@@ -68,3 +68,48 @@ func collection(s simplifier, c geo.Collection) geo.Collection {
 
 	return c
 }
+
+func simplify(s simplifier, geom geo.Geometry) geo.Geometry {
+	switch g := geom.(type) {
+	case nil:
+		return nil
+	case geo.Point:
+		return g
+	case geo.MultiPoint:
+		return g
+	case geo.LineString:
+		if g = lineString(s, g); len(g) == 0 {
+			return nil
+		}
+		return g
+	case geo.MultiLineString:
+		if g = multiLineString(s, g); len(g) == 0 {
+			return nil
+		}
+		return g
+	case geo.Ring:
+		if g = ring(s, g); len(g) == 0 {
+			return nil
+		}
+		return g
+	case geo.Polygon:
+		if g = polygon(s, g); len(g) == 0 {
+			return nil
+		}
+		return g
+	case geo.MultiPolygon:
+		if g = multiPolygon(s, g); len(g) == 0 {
+			return nil
+		}
+		return g
+	case geo.Collection:
+		if g = collection(s, g); len(g) == 0 {
+			return nil
+		}
+		return g
+	case geo.Bound:
+		return g
+	default:
+		panic("unsupported type")
+	}
+}
