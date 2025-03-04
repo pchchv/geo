@@ -14,3 +14,15 @@ func runSimplify(s simplifier, ls geo.LineString, area bool) geo.LineString {
 	ls, _ = s.simplify(ls, area, false)
 	return ls
 }
+
+func lineString(s simplifier, ls geo.LineString) geo.LineString {
+	return runSimplify(s, ls, false)
+}
+
+func multiLineString(s simplifier, mls geo.MultiLineString) geo.MultiLineString {
+	for i := range mls {
+		mls[i] = runSimplify(s, mls[i], false)
+	}
+
+	return mls
+}
