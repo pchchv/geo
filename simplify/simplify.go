@@ -56,3 +56,15 @@ func multiPolygon(s simplifier, mp geo.MultiPolygon) geo.MultiPolygon {
 
 	return mp[:count]
 }
+
+func ring(s simplifier, r geo.Ring) geo.Ring {
+	return geo.Ring(runSimplify(s, geo.LineString(r), true))
+}
+
+func collection(s simplifier, c geo.Collection) geo.Collection {
+	for i := range c {
+		c[i] = simplify(s, c[i])
+	}
+
+	return c
+}
