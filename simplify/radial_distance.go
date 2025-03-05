@@ -2,7 +2,7 @@ package simplify
 
 import "github.com/pchchv/geo"
 
-// var _ geo.Simplifier = &RadialSimplifier{}
+var _ geo.Simplifier = &RadialSimplifier{}
 
 // RadialSimplifier wraps the Radial functions.
 type RadialSimplifier struct {
@@ -46,6 +46,11 @@ func (s *RadialSimplifier) Ring(r geo.Ring) geo.Ring {
 // Collection will simplify the collection using this simplifier.
 func (s *RadialSimplifier) Collection(c geo.Collection) geo.Collection {
 	return collection(s, c)
+}
+
+// Simplify will run the simplification for any geometry type.
+func (s *RadialSimplifier) Simplify(g geo.Geometry) geo.Geometry {
+	return simplify(s, g)
 }
 
 func (s *RadialSimplifier) simplify(ls geo.LineString, area, wim bool) (geo.LineString, []int) {
