@@ -1,4 +1,4 @@
-package simplify
+package simplifier
 
 type visItem struct {
 	area       float64  // triangle area

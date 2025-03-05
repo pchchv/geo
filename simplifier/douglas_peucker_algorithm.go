@@ -1,4 +1,4 @@
-package simplify
+package simplifier
 
 import (
 	"github.com/pchchv/geo"
