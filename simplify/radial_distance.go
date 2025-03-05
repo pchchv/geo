@@ -28,6 +28,16 @@ func (s *RadialSimplifier) MultiLineString(mls geo.MultiLineString) geo.MultiLin
 	return multiLineString(s, mls)
 }
 
+// Polygon will simplify the polygon using this simplifier.
+func (s *RadialSimplifier) Polygon(p geo.Polygon) geo.Polygon {
+	return polygon(s, p)
+}
+
+// MultiPolygon will simplify the multi-polygon using this simplifier.
+func (s *RadialSimplifier) MultiPolygon(mp geo.MultiPolygon) geo.MultiPolygon {
+	return multiPolygon(s, mp)
+}
+
 func (s *RadialSimplifier) simplify(ls geo.LineString, area, wim bool) (geo.LineString, []int) {
 	var indexMap []int
 	if wim {
