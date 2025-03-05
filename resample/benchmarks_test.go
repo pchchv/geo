@@ -2,9 +2,32 @@ package resample_test
 
 import (
 	"encoding/json"
+	"testing"
 
 	"github.com/pchchv/geo"
+	"github.com/pchchv/geo/planar"
+	"github.com/pchchv/geo/resample"
 )
+
+func BenchmarkToMorePoints(b *testing.B) {
+	ls := testLineString1()
+	totalPoints := int(float64(len(ls)) * 1.616)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		resample.Resample(ls, planar.Distance, totalPoints)
+	}
+}
+
+func BenchmarkLineStringResampleToLessPoints(b *testing.B) {
+	ls := testLineString1()
+	totalPoints := int(float64(len(ls)) / 1.616)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		resample.Resample(ls, planar.Distance, totalPoints)
+	}
+}
 
 func testLineString1() geo.LineString {
 	var data [][2]float64
