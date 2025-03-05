@@ -42,3 +42,51 @@ func resample(ls geo.LineString, dists []float64, totalDistance float64, totalPo
 
 	return geo.LineString(points)
 }
+
+// resampleEdgeCases is used to handle edge cases when resampling,
+// i.e., not enough points and the line string is all the same point.
+// Returns nil if there are no edge cases,
+// true if one of these edge cases was found and handled.
+func resampleEdgeCases(ls geo.LineString, totalPoints int) (geo.LineString, bool) {
+	// degenerate case
+	if len(ls) <= 1 {
+		return ls, true
+	}
+
+	// if all the points are the same, treat as special case.
+	equal := true
+	for _, point := range ls {
+		if !ls[0].Equal(point) {
+			equal = false
+			break
+		}
+	}
+
+	if equal {
+		if totalPoints > len(ls) {
+			// extend to be requested length
+			for len(ls) != totalPoints {
+				ls = append(ls, ls[0])
+			}
+
+			return ls, true
+		}
+
+		// contract to be requested length
+		ls = ls[:totalPoints]
+		return ls, true
+	}
+
+	return ls, false
+}
+
+// precomputeDistances precomputes the total distance and intermediate distances.
+func precomputeDistances(ls geo.LineString, df geo.DistanceFunc) (total float64, dists []float64) {
+	dists = make([]float64, len(ls)-1)
+	for i := 0; i < len(ls)-1; i++ {
+		dists[i] = df(ls[i], ls[i+1])
+		total += dists[i]
+	}
+
+	return
+}
