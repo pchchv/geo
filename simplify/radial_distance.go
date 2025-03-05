@@ -17,3 +17,33 @@ func Radial(df geo.DistanceFunc, threshold float64) *RadialSimplifier {
 		Threshold:    threshold,
 	}
 }
+
+func (s *RadialSimplifier) simplify(ls geo.LineString, area, wim bool) (geo.LineString, []int) {
+	var indexMap []int
+	if wim {
+		indexMap = append(indexMap, 0)
+	}
+
+	var current int
+	count := 1
+	for i := 1; i < len(ls); i++ {
+		if s.DistanceFunc(ls[current], ls[i]) > s.Threshold {
+			current = i
+			ls[count] = ls[i]
+			count++
+			if wim {
+				indexMap = append(indexMap, current)
+			}
+		}
+	}
+
+	if current != len(ls)-1 {
+		ls[count] = ls[len(ls)-1]
+		count++
+		if wim {
+			indexMap = append(indexMap, len(ls)-1)
+		}
+	}
+
+	return ls[:count], indexMap
+}
