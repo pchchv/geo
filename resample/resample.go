@@ -17,6 +17,22 @@ func Resample(ls geo.LineString, df geo.DistanceFunc, totalPoints int) geo.LineS
 	}
 }
 
+// ToInterval splits the string into evenly spaced points with the specified spacing.
+func ToInterval(ls geo.LineString, df geo.DistanceFunc, dist float64) geo.LineString {
+	if dist <= 0 {
+		return nil
+	}
+
+	// precomputes the total distance and intermediate distances
+	total, dists := precomputeDistances(ls, df)
+	totalPoints := int(total/dist) + 1
+	if ls, ret := resampleEdgeCases(ls, totalPoints); ret {
+		return ls
+	} else {
+		return resample(ls, dists, total, totalPoints)
+	}
+}
+
 func resample(ls geo.LineString, dists []float64, totalDistance float64, totalPoints int) geo.LineString {
 	var dist float64
 	step := 1
