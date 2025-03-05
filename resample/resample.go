@@ -2,6 +2,21 @@ package resample
 
 import "github.com/pchchv/geo"
 
+// Resample converts the line string into totalPoints-1 evenly spaced segments.
+func Resample(ls geo.LineString, df geo.DistanceFunc, totalPoints int) geo.LineString {
+	if totalPoints <= 0 {
+		return nil
+	}
+
+	if ls, ret := resampleEdgeCases(ls, totalPoints); ret {
+		return ls
+	} else {
+		// precomputes the total distance and intermediate distances
+		total, dists := precomputeDistances(ls, df)
+		return resample(ls, dists, total, totalPoints)
+	}
+}
+
 func resample(ls geo.LineString, dists []float64, totalDistance float64, totalPoints int) geo.LineString {
 	var dist float64
 	step := 1
