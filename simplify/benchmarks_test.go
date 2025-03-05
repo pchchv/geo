@@ -46,6 +46,59 @@ func BenchmarkDouglasPeucker(b *testing.B) {
 	}
 }
 
+func TestVisvalingam_BenchmarkData(t *testing.T) {
+	cases := []struct {
+		threshold float64
+		length    int
+	}{
+		{0.1, 867},
+		{0.5, 410},
+		{1.0, 293},
+		{1.5, 245},
+		{2.0, 208},
+		{3.0, 169},
+		{4.0, 151},
+		{5.0, 135},
+	}
+
+	ls := benchmarkData()
+	for i, tc := range cases {
+		r := VisvalingamThreshold(tc.threshold).LineString(ls.Clone())
+		if len(r) != tc.length {
+			t.Errorf("%d: data reduced poorly: %v != %v", i, len(r), tc.length)
+		}
+	}
+}
+
+func BenchmarkVisvalingam_Threshold(b *testing.B) {
+	var data []geo.LineString
+	ls := benchmarkData()
+	for i := 0; i < b.N; i++ {
+		data = append(data, ls.Clone())
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		VisvalingamThreshold(0.1).LineString(data[i])
+	}
+}
+
+func BenchmarkVisvalingam_Keep(b *testing.B) {
+	var data []geo.LineString
+	ls := benchmarkData()
+	toKeep := int(float64(len(ls)) / 1.616)
+	for i := 0; i < b.N; i++ {
+		data = append(data, ls.Clone())
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		VisvalingamKeep(toKeep).LineString(data[i])
+	}
+}
+
 func benchmarkData() (ls geo.LineString) {
 	f, err := os.Open("testdata/lisbon2portugal.json")
 	if err != nil {
