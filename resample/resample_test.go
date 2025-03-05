@@ -88,3 +88,49 @@ func TestResample(t *testing.T) {
 		}
 	}
 }
+
+func TestToInterval(t *testing.T) {
+	ls := geo.LineString{{0, 0}, {0, 1}, {0, 10}}
+	cases := []struct {
+		name     string
+		distance float64
+		line     geo.LineString
+		expected geo.LineString
+	}{
+		{
+			name:     "same number of points",
+			distance: 5.0,
+			expected: geo.LineString{{0, 0}, {0, 5}, {0, 10}},
+		},
+		{
+			name:     "dist less than 0",
+			distance: -5.0,
+			expected: nil,
+		},
+		{
+			name:     "dist less than 0",
+			distance: -5.0,
+			expected: nil,
+		},
+		{
+			name:     "return same if short line",
+			distance: 5.0,
+			line:     geo.LineString{{0, 0}},
+			expected: geo.LineString{{0, 0}},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			in := ls.Clone()
+			if tc.line != nil {
+				in = tc.line
+			}
+
+			ls := ToInterval(in, planar.Distance, tc.distance)
+			if !ls.Equal(tc.expected) {
+				t.Errorf("incorrect point: %v != %v", ls, tc.expected)
+			}
+		})
+	}
+}
