@@ -1,6 +1,7 @@
 package maptile
 
 import (
+	"math"
 	"math/bits"
 
 	"github.com/pchchv/geo"
@@ -164,4 +165,51 @@ func (t Tile) toZoom(z Zoom) Tile {
 		Y: t.Y >> (t.Z - z),
 		Z: z,
 	}
+}
+
+// At creates a tile for the point at the given zoom.
+// Will create a valid tile for the zoom.
+// Points outside the range lat [-85.0511, 85.0511]
+// will be snapped to the max or min tile as appropriate.
+func At(ll geo.Point, z Zoom) Tile {
+	f := Fraction(ll, z)
+	t := Tile{
+		X: uint32(f[0]),
+		Y: uint32(f[1]),
+		Z: z,
+	}
+
+	return t
+}
+
+// Fraction returns the precise tile fraction at the given zoom.
+// Will return 2^zoom-1 if the point is below 85.0511 S.
+func Fraction(ll geo.Point, z Zoom) (p geo.Point) {
+	factor := uint32(1 << z)
+	maxtiles := float64(factor)
+	lng := ll[0]/360.0 + 0.5
+	p[0] = lng * maxtiles
+	// bound it because we have a top of the world problem
+	if ll[1] < -85.0511 {
+		p[1] = maxtiles - 1
+	} else if ll[1] > 85.0511 {
+		p[1] = 0
+	} else {
+		siny := math.Sin(ll[1] * math.Pi / 180.0)
+		lat := 0.5 + 0.5*math.Log((1.0+siny)/(1.0-siny))/(-2*math.Pi)
+		p[1] = lat * maxtiles
+	}
+
+	return
+}
+
+// FromQuadkey creates the tile from the quadkey.
+func FromQuadkey(k uint64, z Zoom) Tile {
+	t := Tile{Z: z}
+	for i := Zoom(0); i < z; i++ {
+		t.X |= uint32((k & (1 << (2 * i))) >> i)
+		t.Y |= uint32((k & (1 << (2*i + 1))) >> (i + 1))
+	}
+
+	return t
 }
