@@ -8,8 +8,9 @@ It defines a tile as:
 type Zoom uint32
 
 type Tile struct {
-    X, Y uint32
-    Z    Zoom
+    X uint32
+    Y uint32
+    Z Zoom
 }
 ```
 
