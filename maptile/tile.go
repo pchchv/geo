@@ -1,6 +1,8 @@
 package maptile
 
 import (
+	"math/bits"
+
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/internal/mercator"
 )
@@ -114,6 +116,38 @@ func (t Tile) Range(z Zoom) (min, max Tile) {
 			Y: ((t.Y + 1) << offset) - 1,
 			Z: z,
 		}
+}
+
+// SharedParent returns the tile that contains both the tiles.
+func (t Tile) SharedParent(tile Tile) Tile {
+	// bring both tiles to the lowest zoom.
+	if t.Z != tile.Z {
+		if t.Z < tile.Z {
+			tile = tile.toZoom(t.Z)
+		} else {
+			t = t.toZoom(tile.Z)
+		}
+	}
+
+	if t == tile {
+		return t
+	}
+
+	// bits different for x and y
+	xc := uint32(32 - bits.LeadingZeros32(t.X^tile.X))
+	yc := uint32(32 - bits.LeadingZeros32(t.Y^tile.Y))
+
+	// max of xc, yc
+	maxc := xc
+	if yc > maxc {
+		maxc = yc
+	}
+
+	return Tile{
+		X: t.X >> maxc,
+		Y: t.Y >> maxc,
+		Z: t.Z - Zoom(maxc),
+	}
 }
 
 func (t Tile) toZoom(z Zoom) Tile {
