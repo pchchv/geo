@@ -53,3 +53,21 @@ func (t Tile) Bound(tileBuffer ...float64) geo.Bound {
 		Max: geo.Point{lon2, lat1},
 	}
 }
+
+// Parent returns the parent of the tile.
+func (t Tile) Parent() Tile {
+	if t.Z == 0 {
+		return t
+	}
+
+	return Tile{
+		X: t.X >> 1,
+		Y: t.Y >> 1,
+		Z: t.Z - 1,
+	}
+}
+
+// Center returns the center of the tile.
+func (t Tile) Center() geo.Point {
+	return t.Bound(0).Center()
+}
