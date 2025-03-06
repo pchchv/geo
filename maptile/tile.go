@@ -90,6 +90,32 @@ func (t Tile) Quadkey() uint64 {
 	return result
 }
 
+// Contains returns if the given tile is
+// fully contained (or equal to) the give tile.
+func (t Tile) Contains(tile Tile) bool {
+	return tile.Z >= t.Z && t == tile.toZoom(t.Z)
+}
+
+// Range returns the min and max tile "range" to
+// cover the tile at the given zoom.
+func (t Tile) Range(z Zoom) (min, max Tile) {
+	if z < t.Z {
+		t = t.toZoom(z)
+		return t, t
+	}
+
+	offset := z - t.Z
+	return Tile{
+			X: t.X << offset,
+			Y: t.Y << offset,
+			Z: z,
+		}, Tile{
+			X: ((t.X + 1) << offset) - 1,
+			Y: ((t.Y + 1) << offset) - 1,
+			Z: z,
+		}
+}
+
 func (t Tile) toZoom(z Zoom) Tile {
 	if z > t.Z {
 		return Tile{
