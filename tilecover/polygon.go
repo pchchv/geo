@@ -30,6 +30,15 @@ func MultiPolygon(mp geo.MultiPolygon, z maptile.Zoom) (maptile.Set, error) {
 	return set, nil
 }
 
+// Ring creates a tile cover for the ring.
+func Ring(r geo.Ring, z maptile.Zoom) (maptile.Set, error) {
+	if len(r) == 0 {
+		return make(maptile.Set), nil
+	}
+
+	return Polygon(geo.Polygon{r}, z)
+}
+
 func polygon(set maptile.Set, p geo.Polygon, zoom maptile.Zoom) error {
 	intersections := make([][2]uint32, 0)
 	for _, r := range p {
