@@ -337,3 +337,37 @@ func TestSiblings(t *testing.T) {
 		t.Errorf("should have 4 children: %v", len(siblings))
 	}
 }
+
+func BenchmarkSharedParent_SameZoom(b *testing.B) {
+	p := geo.Point{-122.2711, 37.8044}
+	one := At(p, 10)
+	two := At(p, 10)
+	one.Z = 20
+	one.X = (one.X << 10) | 0x25A
+	one.Y = (one.X << 10) | 0x14B
+	two.Z = 20
+	two.X = (two.X << 10) | 0x15B
+	two.Y = (two.X << 10) | 0x26A
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		one.SharedParent(two)
+	}
+}
+
+func BenchmarkSharedParent_DifferentZoom(b *testing.B) {
+	p := geo.Point{-122.2711, 37.8044}
+	one := At(p, 10)
+	two := At(p, 10)
+	one.Z = 20
+	one.X = (one.X << 10) | 0x25A
+	one.Y = (one.X << 10) | 0x14B
+	two.Z = 18
+	two.X = (two.X << 8) | 0x03B
+	two.Y = (two.X << 8) | 0x0CA
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		one.SharedParent(two)
+	}
+}
