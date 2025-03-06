@@ -89,3 +89,19 @@ func (t Tile) Quadkey() uint64 {
 
 	return result
 }
+
+func (t Tile) toZoom(z Zoom) Tile {
+	if z > t.Z {
+		return Tile{
+			X: t.X << (z - t.Z),
+			Y: t.Y << (z - t.Z),
+			Z: z,
+		}
+	}
+
+	return Tile{
+		X: t.X >> (t.Z - z),
+		Y: t.Y >> (t.Z - z),
+		Z: z,
+	}
+}
