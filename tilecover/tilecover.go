@@ -1,6 +1,8 @@
 package tilecover
 
 import (
+	"fmt"
+
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/maptile"
 )
@@ -36,4 +38,46 @@ func Bound(b geo.Bound, z maptile.Zoom) maptile.Set {
 	}
 
 	return result
+}
+
+// Geometry returns the covering set of tiles for the given geometry.
+func Geometry(g geo.Geometry, z maptile.Zoom) (maptile.Set, error) {
+	switch g := g.(type) {
+	case nil:
+		return nil, nil
+	case geo.Point:
+		return Point(g, z), nil
+	case geo.MultiPoint:
+		return MultiPoint(g, z), nil
+	case geo.LineString:
+		return LineString(g, z), nil
+	case geo.MultiLineString:
+		return MultiLineString(g, z), nil
+	case geo.Ring:
+		return Ring(g, z)
+	case geo.Polygon:
+		return Polygon(g, z)
+	case geo.MultiPolygon:
+		return MultiPolygon(g, z)
+	case geo.Collection:
+		return Collection(g, z)
+	case geo.Bound:
+		return Bound(g, z), nil
+	default:
+		panic(fmt.Sprintf("geometry type not supported: %T", g))
+	}
+}
+
+// Collection returns the covering set of tiles for the geometry collection.
+func Collection(c geo.Collection, z maptile.Zoom) (maptile.Set, error) {
+	set := make(maptile.Set)
+	for _, g := range c {
+		if s, err := Geometry(g, z); err != nil {
+			return nil, err
+		} else {
+			set.Merge(s)
+		}
+	}
+
+	return set, nil
 }
