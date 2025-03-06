@@ -152,6 +152,22 @@ func (t Tile) SharedParent(tile Tile) Tile {
 	}
 }
 
+// Children returns the 4 children of the tile.
+func (t Tile) Children() Tiles {
+	return Tiles{
+		Tile{t.X << 1, t.Y << 1, t.Z + 1},
+		Tile{(t.X << 1) + 1, t.Y << 1, t.Z + 1},
+		Tile{(t.X << 1) + 1, (t.Y << 1) + 1, t.Z + 1},
+		Tile{t.X << 1, (t.Y << 1) + 1, t.Z + 1},
+	}
+}
+
+// Siblings returns the 4 tiles that
+// share this tile's parent.
+func (t Tile) Siblings() Tiles {
+	return t.Parent().Children()
+}
+
 func (t Tile) toZoom(z Zoom) Tile {
 	if z > t.Z {
 		return Tile{
