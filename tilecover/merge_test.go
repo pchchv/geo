@@ -1,6 +1,10 @@
 package tilecover
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/pchchv/geo/maptile"
+)
 
 func TestMergeUp(t *testing.T) {
 	f := loadFeature(t, "./testdata/line.geojson")
@@ -33,4 +37,55 @@ func TestMergeUp(t *testing.T) {
 	if c4 != c {
 		t.Errorf("count 4 should be same as mergeUp: %v != %v", c4, c)
 	}
+}
+
+func BenchmarkMergeUp_z0z10(b *testing.B) {
+	g := loadFeature(b, "./testdata/russia.geojson").Geometry
+	tiles, _ := Geometry(g, 10)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		MergeUp(cloneSet(tiles), 0)
+	}
+}
+
+func BenchmarkMergeUp_z8z9(b *testing.B) {
+	g := loadFeature(b, "./testdata/russia.geojson").Geometry
+	tiles, _ := Geometry(g, 9)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		MergeUp(cloneSet(tiles), 8)
+	}
+}
+
+func BenchmarkMergeUpPartial4_z0z10(b *testing.B) {
+	g := loadFeature(b, "./testdata/russia.geojson").Geometry
+	tiles, _ := Geometry(g, 10)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		MergeUpPartial(cloneSet(tiles), 0, 4)
+	}
+}
+
+func BenchmarkMergeUpPartial4_z8z9(b *testing.B) {
+	g := loadFeature(b, "./testdata/russia.geojson").Geometry
+	tiles, _ := Geometry(g, 9)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		MergeUpPartial(cloneSet(tiles), 8, 4)
+	}
+}
+
+func cloneSet(t maptile.Set) maptile.Set {
+	r := make(maptile.Set, len(t))
+	for k, v := range t {
+		if v {
+			r[k] = v
+		}
+	}
+
+	return r
 }
