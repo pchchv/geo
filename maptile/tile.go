@@ -71,3 +71,21 @@ func (t Tile) Parent() Tile {
 func (t Tile) Center() geo.Point {
 	return t.Bound(0).Center()
 }
+
+// Valid returns if the tile's x/y are
+// within the range for the tile's zoom.
+func (t Tile) Valid() bool {
+	maxIndex := uint32(1) << uint32(t.Z)
+	return t.X < maxIndex && t.Y < maxIndex
+}
+
+// Quadkey returns the quad key for the tile.
+func (t Tile) Quadkey() uint64 {
+	var i, result uint64
+	for i = 0; i < uint64(t.Z); i++ {
+		result |= (uint64(t.X) & (1 << i)) << i
+		result |= (uint64(t.Y) & (1 << i)) << (i + 1)
+	}
+
+	return result
+}
