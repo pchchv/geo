@@ -7,6 +7,23 @@ import (
 	"github.com/pchchv/geo/maptile"
 )
 
+// LineString creates a tile cover for the line string.
+func LineString(ls geo.LineString, z maptile.Zoom) maptile.Set {
+	set := make(maptile.Set)
+	line(set, ls, z, nil)
+	return set
+}
+
+// MultiLineString creates a tile cover for the line strings.
+func MultiLineString(mls geo.MultiLineString, z maptile.Zoom) maptile.Set {
+	set := make(maptile.Set)
+	for _, ls := range mls {
+		line(set, ls, z, nil)
+	}
+
+	return set
+}
+
 func line(set maptile.Set, line geo.LineString, zoom maptile.Zoom, ring [][2]uint32) [][2]uint32 {
 	var x, y float64
 	inf := math.Inf(1)
