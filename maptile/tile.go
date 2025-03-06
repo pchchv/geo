@@ -5,6 +5,7 @@ import (
 	"math/bits"
 
 	"github.com/pchchv/geo"
+	"github.com/pchchv/geo/geojson"
 	"github.com/pchchv/geo/internal/mercator"
 )
 
@@ -165,6 +166,22 @@ func (t Tile) toZoom(z Zoom) Tile {
 		Y: t.Y >> (t.Z - z),
 		Z: z,
 	}
+}
+
+// Tiles is a set of tiles,
+// later we can add methods to this.
+type Tiles []Tile
+
+// ToFeatureCollection converts the tiles into a feature collection.
+// This method is mostly useful for debugging output.
+func (ts Tiles) ToFeatureCollection() *geojson.FeatureCollection {
+	fc := geojson.NewFeatureCollection()
+	fc.Features = make([]*geojson.Feature, 0, len(ts))
+	for _, t := range ts {
+		fc.Append(geojson.NewFeature(t.Bound().ToPolygon()))
+	}
+
+	return fc
 }
 
 // At creates a tile for the point at the given zoom.
