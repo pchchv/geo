@@ -8,6 +8,28 @@ import (
 	"github.com/pchchv/geo/maptile"
 )
 
+// Polygon creates a tile cover for the polygon.
+func Polygon(p geo.Polygon, z maptile.Zoom) (maptile.Set, error) {
+	set := make(maptile.Set)
+	if err := polygon(set, p, z); err != nil {
+		return nil, err
+	}
+
+	return set, nil
+}
+
+// MultiPolygon creates a tile cover for the multi-polygon.
+func MultiPolygon(mp geo.MultiPolygon, z maptile.Zoom) (maptile.Set, error) {
+	set := make(maptile.Set)
+	for _, p := range mp {
+		if err := polygon(set, p, z); err != nil {
+			return nil, err
+		}
+	}
+
+	return set, nil
+}
+
 func polygon(set maptile.Set, p geo.Polygon, zoom maptile.Zoom) error {
 	intersections := make([][2]uint32, 0)
 	for _, r := range p {
