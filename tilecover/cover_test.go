@@ -5,12 +5,37 @@ import (
 	"math"
 	"os"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/geojson"
 	"github.com/pchchv/geo/planar"
 )
+
+func TestCountries(t *testing.T) {
+	files, err := os.ReadDir("./testdata/world")
+	if err != nil {
+		t.Errorf("could not read directory: %e", err)
+	}
+
+	var countries []string
+	for _, info := range files {
+		if !strings.Contains(info.Name(), "_out") {
+			countries = append(countries, strings.Split(info.Name(), ".")[0])
+		}
+	}
+
+	for _, country := range countries {
+		t.Run(country, func(t *testing.T) {
+			f := loadFeature(t, "./testdata/world/"+country+".geo.json")
+			tiles, _ := Geometry(f.Geometry, 6)
+			tiles = MergeUp(tiles, 1)
+			expected := loadFeatureCollection(t, "./testdata/world/"+country+"_out.geojson")
+			compareFeatureCollections(t, country, tiles.ToFeatureCollection(), expected)
+		})
+	}
+}
 
 func loadFeature(t testing.TB, path string) *geojson.Feature {
 	t.Helper()
