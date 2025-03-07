@@ -10,6 +10,7 @@ import (
 
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/geojson"
+	"github.com/pchchv/geo/geometries"
 	"github.com/pchchv/geo/maptile"
 	"github.com/pchchv/geo/planar"
 )
@@ -231,7 +232,7 @@ func compareFeatureCollections(t testing.TB, name string, result, expected *geoj
 			t.Errorf("f %d: area not equal: %v", i, delta)
 		}
 
-		if dist := geo.Distance(rc, ec); dist > 1 {
+		if dist := geometries.Distance(rc, ec); dist > 1 {
 			failure = true
 			t.Errorf("f %d: centroid far apart: %v", i, dist)
 		}
