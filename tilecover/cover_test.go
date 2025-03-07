@@ -10,6 +10,7 @@ import (
 
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/geojson"
+	"github.com/pchchv/geo/maptile"
 	"github.com/pchchv/geo/planar"
 )
 
@@ -33,6 +34,91 @@ func TestCountries(t *testing.T) {
 			tiles = MergeUp(tiles, 1)
 			expected := loadFeatureCollection(t, "./testdata/world/"+country+"_out.geojson")
 			compareFeatureCollections(t, country, tiles.ToFeatureCollection(), expected)
+		})
+	}
+}
+
+func TestTestdata(t *testing.T) {
+	cases := []struct {
+		name     string
+		min, max maptile.Zoom
+	}{
+		{
+			name: "blocky",
+			min:  6, max: 6,
+		},
+		{
+			name: "building",
+			min:  18, max: 18,
+		},
+		{
+			name: "degenring",
+			min:  11, max: 15,
+		},
+		{
+			name: "donut",
+			min:  16, max: 16,
+		},
+		{
+			name: "edgeline",
+			min:  14, max: 14,
+		},
+		{
+			name: "line",
+			min:  1, max: 12,
+		},
+		{
+			name: "multiline",
+			min:  1, max: 8,
+		},
+		{
+			name: "multipoint",
+			min:  1, max: 12,
+		},
+		{
+			name: "polygon",
+			min:  1, max: 15,
+		},
+		{
+			name: "pyramid",
+			min:  10, max: 10,
+		},
+		{
+			name: "russia",
+			min:  6, max: 6,
+		},
+		{
+			name: "small_poly",
+			min:  10, max: 10,
+		},
+		{
+			name: "spiked",
+			min:  10, max: 10,
+		},
+		{
+			name: "tetris",
+			min:  10, max: 10,
+		},
+		{
+			name: "uk",
+			min:  7, max: 9,
+		},
+		{
+			name: "zero",
+			min:  10, max: 10,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			f := loadFeature(t, "./testdata/"+tc.name+".geojson")
+			expected := loadFeatureCollection(t, "./testdata/"+tc.name+"_out.geojson")
+			tiles, _ := Geometry(f.Geometry, tc.max)
+			result := MergeUp(tiles, tc.min).ToFeatureCollection()
+			compareFeatureCollections(t, tc.name, result, expected)
+			tiles, _ = Geometry(f.Geometry, tc.max)
+			result = MergeUpPartial(tiles, tc.min, 4).ToFeatureCollection()
+			compareFeatureCollections(t, tc.name, result, expected)
 		})
 	}
 }
