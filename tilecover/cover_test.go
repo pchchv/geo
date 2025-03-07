@@ -2,12 +2,14 @@ package tilecover
 
 import (
 	"encoding/json"
+	"math"
 	"os"
 	"sort"
 	"testing"
 
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/geojson"
+	"github.com/pchchv/geo/planar"
 )
 
 func loadFeature(t testing.TB, path string) *geojson.Feature {
@@ -91,5 +93,40 @@ func output(t testing.TB, name string, r *geojson.FeatureCollection) {
 
 	if err = os.WriteFile("failure_"+name+".geojson", data, 0644); err != nil {
 		t.Fatalf("write file failure: %v", err)
+	}
+}
+
+func compareFeatureCollections(t testing.TB, name string, result, expected *geojson.FeatureCollection) {
+	sortFC(result)
+	sortFC(expected)
+
+	t.Helper()
+
+	if len(result.Features) != len(expected.Features) {
+		t.Errorf("feature count mismatch: %v != %v", len(result.Features), len(expected.Features))
+		output(t, name, result)
+		return
+	}
+
+	failure := false
+	for i := range result.Features {
+		r := result.Features[i].Geometry.(geo.Polygon)
+		e := expected.Features[i].Geometry.(geo.Polygon)
+		rc, ra := planar.CentroidArea(r)
+		ec, ea := planar.CentroidArea(e)
+
+		if delta := math.Abs(ra - ea); delta > 0.01 {
+			failure = true
+			t.Errorf("f %d: area not equal: %v", i, delta)
+		}
+
+		if dist := geo.Distance(rc, ec); dist > 1 {
+			failure = true
+			t.Errorf("f %d: centroid far apart: %v", i, dist)
+		}
+	}
+
+	if failure {
+		output(t, name, result)
 	}
 }
