@@ -6,6 +6,46 @@ import (
 	"github.com/pchchv/geo"
 )
 
+var (
+	minLatitude  = deg2rad(-90)
+	maxLatitude  = deg2rad(90)
+	minLongitude = deg2rad(-180)
+	maxLongitude = deg2rad(180)
+)
+
+// NewBoundAroundPoint creates a new bound given a center point,
+// and a distance from the center point in meters.
+func NewBoundAroundPoint(center geo.Point, distance float64) geo.Bound {
+	var minLon, maxLon float64
+	radDist := distance / geo.EarthRadius
+	radLat := deg2rad(center[1])
+	radLon := deg2rad(center[0])
+	minLat := radLat - radDist
+	maxLat := radLat + radDist
+	if minLat > minLatitude && maxLat < maxLatitude {
+		deltaLon := math.Asin(math.Sin(radDist) / math.Cos(radLat))
+		minLon = radLon - deltaLon
+		if minLon < minLongitude {
+			minLon += 2 * math.Pi
+		}
+
+		maxLon = radLon + deltaLon
+		if maxLon > maxLongitude {
+			maxLon -= 2 * math.Pi
+		}
+	} else {
+		minLat = math.Max(minLat, minLatitude)
+		maxLat = math.Min(maxLat, maxLatitude)
+		minLon = minLongitude
+		maxLon = maxLongitude
+	}
+
+	return geo.Bound{
+		Min: geo.Point{rad2deg(minLon), rad2deg(minLat)},
+		Max: geo.Point{rad2deg(maxLon), rad2deg(maxLat)},
+	}
+}
+
 // BoundHeight returns the approximate height in meters.
 func BoundHeight(b geo.Bound) float64 {
 	return 111131.75 * (b.Max[1] - b.Min[1])
