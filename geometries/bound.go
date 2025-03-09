@@ -20,6 +20,22 @@ func BoundWidth(b geo.Bound) float64 {
 	return Distance(s1, s2)
 }
 
+// BoundPad expands the bound in all directions by the given amount of meters.
+func BoundPad(b geo.Bound, meters float64) geo.Bound {
+	dy := meters / 111131.75
+	dx := dy / math.Cos(deg2rad(b.Max[1]))
+	dx = math.Max(dx, dy/math.Cos(deg2rad(b.Min[1])))
+	b.Min[0] -= dx
+	b.Min[1] -= dy
+	b.Max[0] += dx
+	b.Max[1] += dy
+	b.Min[0] = math.Max(b.Min[0], -180)
+	b.Min[1] = math.Max(b.Min[1], -90)
+	b.Max[0] = math.Min(b.Max[0], 180)
+	b.Max[1] = math.Min(b.Max[1], 90)
+	return b
+}
+
 func deg2rad(d float64) float64 {
 	return d * math.Pi / 180.0
 }
