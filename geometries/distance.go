@@ -60,3 +60,15 @@ func PointAtBearingAndDistance(p geo.Point, bearing, distance float64) geo.Point
 	bLon := aLon + math.Atan2(math.Sin(bearingRadians)*math.Sin(distanceRatio)*math.Cos(aLat), math.Cos(distanceRatio)-math.Sin(aLat)*math.Sin(bLat))
 	return geo.Point{rad2deg(bLon), rad2deg(bLat)}
 }
+
+// Bearing computes the direction one
+// must start traveling on earth to be heading from,
+// to the given points.
+func Bearing(from, to geo.Point) float64 {
+	dLon := deg2rad(to[0] - from[0])
+	fromLatRad := deg2rad(from[1])
+	toLatRad := deg2rad(to[1])
+	y := math.Sin(dLon) * math.Cos(toLatRad)
+	x := math.Cos(fromLatRad)*math.Sin(toLatRad) - math.Sin(fromLatRad)*math.Cos(toLatRad)*math.Cos(dLon)
+	return rad2deg(math.Atan2(y, x))
+}
