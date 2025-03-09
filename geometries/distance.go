@@ -72,3 +72,29 @@ func Bearing(from, to geo.Point) float64 {
 	x := math.Cos(fromLatRad)*math.Sin(toLatRad) - math.Sin(fromLatRad)*math.Cos(toLatRad)*math.Cos(dLon)
 	return rad2deg(math.Atan2(y, x))
 }
+
+func PointAtDistanceAlongLine(ls geo.LineString, distance float64) (geo.Point, float64) {
+	if len(ls) == 0 {
+		panic("empty LineString")
+	}
+
+	if distance < 0 || len(ls) == 1 {
+		return ls[0], 0.0
+	}
+
+	var travelled float64
+	var from, to geo.Point
+	for i := 1; i < len(ls); i++ {
+		from, to = ls[i-1], ls[i]
+		actualSegmentDistance := DistanceHaversine(from, to)
+		expectedSegmentDistance := distance - travelled
+		if expectedSegmentDistance < actualSegmentDistance {
+			bearing := Bearing(from, to)
+			return PointAtBearingAndDistance(from, bearing, expectedSegmentDistance), bearing
+		}
+
+		travelled += actualSegmentDistance
+	}
+
+	return to, Bearing(from, to)
+}
