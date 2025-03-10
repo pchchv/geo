@@ -64,3 +64,10 @@ func TestSignedArea(t *testing.T) {
 		})
 	}
 }
+
+func TestArea(t *testing.T) {
+	for _, g := range geo.AllGeometries {
+		// should not panic with unsupported type
+		Area(g)
+	}
+}
