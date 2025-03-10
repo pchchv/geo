@@ -12,3 +12,10 @@ func TestLength(t *testing.T) {
 		Length(g)
 	}
 }
+
+func TestLengthHaversine(t *testing.T) {
+	for _, g := range geo.AllGeometries {
+		// should not panic with unsupported type
+		LengthHaversine(g)
+	}
+}
