@@ -1,6 +1,7 @@
 package geometries
 
 import (
+	"math"
 	"testing"
 
 	"github.com/pchchv/geo"
@@ -38,5 +39,49 @@ func TestBoundAroundPoint(t *testing.T) {
 	//Given point is 968.9 km away from center
 	if b.Contains(geo.Point{3.412, 58.3838}) {
 		t.Errorf("should not have point included in bound")
+	}
+}
+
+func TestBoundPad(t *testing.T) {
+	cases := []struct {
+		name  string
+		bound geo.Bound
+	}{
+		{
+			name:  "test bound",
+			bound: geo.MultiPoint{{-122.559, 37.887}, {-122.521, 37.911}}.Bound(),
+		},
+		{
+			name:  "no height",
+			bound: geo.MultiPoint{{-122.559, 15}, {-122.521, 15}}.Bound(),
+		},
+		{
+			name:  "no area",
+			bound: geo.Bound{Min: geo.Point{20, -15}, Max: geo.Point{20, -15}},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			b2 := BoundPad(tc.bound, 100)
+
+			v1 := BoundHeight(tc.bound) + 200
+			v2 := BoundHeight(b2)
+			if math.Abs(v1-v2) > 1.0 {
+				t.Errorf("height incorrected: %f != %f", v1, v2)
+			}
+
+			v1 = BoundWidth(tc.bound) + 200
+			v2 = BoundWidth(b2)
+			if math.Abs(v1-v2) > 1.0 {
+				t.Errorf("height incorrected: %f != %f", v1, v2)
+			}
+		})
+	}
+
+	b1 := geo.Bound{Min: geo.Point{-180, -90}, Max: geo.Point{180, 90}}
+	b2 := BoundPad(b1, 100)
+	if !b1.Equal(b2) {
+		t.Errorf("should be extend bound around fill earth: %v", b2)
 	}
 }
