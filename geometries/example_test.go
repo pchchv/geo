@@ -33,3 +33,20 @@ func ExampleDistance() {
 	// Output:
 	// 13042.047 meters
 }
+
+func ExampleLength() {
+	poly := geo.Polygon{
+		{
+			{-122.4163816, 37.7792782},
+			{-122.4162786, 37.7787626},
+			{-122.4151027, 37.7789118},
+			{-122.4152143, 37.7794274},
+			{-122.4163816, 37.7792782},
+		},
+	}
+	l := geometries.Length(poly)
+
+	fmt.Printf("%0.0f meters", l)
+	// Output:
+	// 325 meters
+}
