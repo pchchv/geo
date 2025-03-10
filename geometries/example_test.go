@@ -23,3 +23,13 @@ func ExampleArea() {
 	// Output:
 	// 6073.368008 m^2
 }
+
+func ExampleDistance() {
+	oakland := geo.Point{-122.270833, 37.804444}
+	sf := geo.Point{-122.416667, 37.783333}
+	d := geometries.Distance(oakland, sf)
+
+	fmt.Printf("%0.3f meters", d)
+	// Output:
+	// 13042.047 meters
+}
