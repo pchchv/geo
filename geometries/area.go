@@ -53,3 +53,10 @@ func ringArea(r geo.Ring) float64 {
 
 	return -area * geo.EarthRadius * geo.EarthRadius / 2
 }
+
+func collectionArea(c geo.Collection) (area float64) {
+	for _, g := range c {
+		area += Area(g)
+	}
+	return
+}
