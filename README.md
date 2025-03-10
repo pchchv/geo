@@ -73,3 +73,45 @@ For example:
   poly := geo.Polygon{...}
   centroid, area := planar.CentroidArea(poly)
   ```
+
+## GeoJSON
+
+The [geojson](geojson) sub-package implements Marshalling and Unmarshalling of GeoJSON data.  
+Features are defined as:
+
+```go
+type Feature struct {
+    ID         interface{}  `json:"id,omitempty"`
+    Type       string       `json:"type"`
+    Geometry   geo.Geometry `json:"geometry"`
+    Properties Properties   `json:"properties"`
+}
+```
+
+Defining geometry as the `geo.Geometry` interface, along with the subpackage functions of the accepting geometries, allows them to work together to create usable code.  
+For example, clipping all the geometries in a collection:
+
+```go
+fc, err := geojson.UnmarshalFeatureCollection(data)
+for _, f := range fc {
+    f.Geometry = clip.Geometry(bound, f.Geometry)
+}
+```
+
+Package supports third party "encoding/json" replacements such [github.com/json-iterator/go](https://github.com/json-iterator/go).  
+See the [geojson](geojson) readme for more details.
+
+Types also support BSON so they can be used directly when working with MongoDB.
+
+## List of subpackage utilities
+
+- [`clip`](clip) - clipping geometry to a bounding box
+- [`geojson`](geojson) - working with geojson and the types in this package
+- [`geometries`](geometries) - defines common 2d geometries
+- [`maptile`](maptile) - working with mercator map tiles and quadkeys
+- [`planar`](planar) - area and distance calculations
+- [`project`](project) - project geometries between geo and planar contexts
+- [`quadtree`](quadtree) - quadtree implementation using the types in this package
+- [`resample`](resample) - resample points in a line string geometry
+- [`simplifier`](simplifier) - linear geometry simplifications like Douglas-Peucker
+- [`tilecover`](tilecover) - computes the covering set of tiles
