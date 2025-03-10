@@ -174,3 +174,31 @@ func TestPointAtDistanceAlongLineWithEmptyLineString(t *testing.T) {
 	line := geo.LineString{}
 	PointAtDistanceAlongLine(line, 90000)
 }
+
+func TestBearing(t *testing.T) {
+	p1 := geo.Point{0, 0}
+	p2 := geo.Point{0, 1}
+	if d := Bearing(p1, p2); d != 0 {
+		t.Errorf("expected 0, got %f", d)
+	}
+
+	if d := Bearing(p2, p1); d != 180 {
+		t.Errorf("expected 180, got %f", d)
+	}
+
+	p1 = geo.Point{0, 0}
+	p2 = geo.Point{1, 0}
+	if d := Bearing(p1, p2); d != 90 {
+		t.Errorf("expected 90, got %f", d)
+	}
+
+	if d := Bearing(p2, p1); d != -90 {
+		t.Errorf("expected -90, got %f", d)
+	}
+
+	p1 = geo.Point{-1.8444, 53.1506}
+	p2 = geo.Point{0.1406, 52.2047}
+	if d := Bearing(p1, p2); math.Abs(127.373351-d) > epsilon {
+		t.Errorf("point, bearingTo got %f", d)
+	}
+}
