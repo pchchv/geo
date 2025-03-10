@@ -70,12 +70,14 @@ func (f *Feature) UnmarshalBSON(data []byte) error {
 
 // UnmarshalFeature decodes the data into a GeoJSON feature.
 // Alternately one can call json.Unmarshal(f) directly for the same result.
-func UnmarshalFeature(data []byte) (f *Feature, err error) {
-	if err = f.UnmarshalJSON(data); err != nil {
+func UnmarshalFeature(data []byte) (*Feature, error) {
+	f := &Feature{}
+	err := f.UnmarshalJSON(data)
+	if err != nil {
 		return nil, err
 	}
 
-	return
+	return f, nil
 }
 
 // Point implements the geo.Pointer interface so that Features can be used with quadtrees.

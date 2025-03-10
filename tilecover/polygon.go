@@ -8,6 +8,10 @@ import (
 	"github.com/pchchv/geo/maptile"
 )
 
+// ErrUnevenIntersections can be returned when clipping polygons
+// and there are issues with the geometries, like the rings are not closed.
+var ErrUnevenIntersections = errors.New("tilecover: uneven intersections, ring not closed?")
+
 // Polygon creates a tile cover for the polygon.
 func Polygon(p geo.Polygon, z maptile.Zoom) (maptile.Set, error) {
 	set := make(maptile.Set)
@@ -58,7 +62,7 @@ func polygon(set maptile.Set, p geo.Polygon, zoom maptile.Zoom) error {
 	}
 
 	if len(intersections)%2 != 0 {
-		return errors.New("tilecover: uneven intersections, ring not closed?")
+		return ErrUnevenIntersections
 	}
 
 	// sort by y, then x

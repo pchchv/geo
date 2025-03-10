@@ -19,7 +19,7 @@ type Geometry struct {
 
 // NewGeometry will create a Geometry object but
 // will convert the input into a GoeJSON geometry.
-// ie. it will convert Rings and Bounds into Polygons.
+// i.e., it will convert Rings and Bounds into Polygons.
 func NewGeometry(g geo.Geometry) *Geometry {
 	jg := &Geometry{}
 	switch g := g.(type) {
@@ -93,12 +93,13 @@ func (g *Geometry) Geometry() geo.Geometry {
 
 // UnmarshalGeometry decodes the JSON data into a GeoJSON feature.
 // Alternately one can call json.Unmarshal(g) directly for the same result.
-func UnmarshalGeometry(data []byte) (g *Geometry, err error) {
-	if err = unmarshalJSON(data, g); err != nil {
+func UnmarshalGeometry(data []byte) (*Geometry, error) {
+	g := &Geometry{}
+	if err := unmarshalJSON(data, g); err != nil {
 		return nil, err
 	}
 
-	return
+	return g, nil
 }
 
 // UnmarshalJSON will unmarshal the correct geometry from the JSON structure.
