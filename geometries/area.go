@@ -6,6 +6,13 @@ import (
 	"github.com/pchchv/geo"
 )
 
+// SignedArea returns the signed area of the ring.
+// Return negative if the ring is in the clockwise direction.
+// Implicitly close the ring.
+func SignedArea(r geo.Ring) float64 {
+	return ringArea(r)
+}
+
 func ringArea(r geo.Ring) float64 {
 	if len(r) < 3 {
 		return 0
