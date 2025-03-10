@@ -1,3 +1,3 @@
-# geo
+# geo [![CI](https://github.com/pchchv/geo/workflows/CI/badge.svg)](https://github.com/pchchv/geo/actions?query=workflow%3ACI+event%3Apush) [![Go Report Card](https://goreportcard.com/badge/github.com/pchchv/geo)](https://goreportcard.com/report/github.com/pchchv/geo) [![Go Reference](https://pkg.go.dev/badge/github.com/pchchv/geo.svg)](https://pkg.go.dev/github.com/pchchv/geo)
 
-geo defining a set of types for working with 2D geo and planar/projected geometric data in Golang.
+Package *geo* defines a set of types for working with 2D geo and planar/projected geometric data in Golang.
