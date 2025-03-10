@@ -1,6 +1,7 @@
 package geometries
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/pchchv/geo"
@@ -11,6 +12,26 @@ import (
 // Implicitly close the ring.
 func SignedArea(r geo.Ring) float64 {
 	return ringArea(r)
+}
+
+// Area returns the area of the geometry on the earth.
+func Area(g geo.Geometry) float64 {
+	switch g := g.(type) {
+	case nil, geo.Point, geo.MultiPoint, geo.LineString, geo.MultiLineString:
+		return 0
+	case geo.Ring:
+		return math.Abs(ringArea(g))
+	case geo.Polygon:
+		return polygonArea(g)
+	case geo.MultiPolygon:
+		return multiPolygonArea(g)
+	case geo.Collection:
+		return collectionArea(g)
+	case geo.Bound:
+		return Area(g.ToRing())
+	default:
+		panic(fmt.Sprintf("geometry type not supported: %T", g))
+	}
 }
 
 func ringArea(r geo.Ring) float64 {
