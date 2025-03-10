@@ -60,3 +60,23 @@ func collectionArea(c geo.Collection) (area float64) {
 	}
 	return
 }
+
+func polygonArea(p geo.Polygon) float64 {
+	if len(p) == 0 {
+		return 0
+	}
+
+	sum := math.Abs(ringArea(p[0]))
+	for i := 1; i < len(p); i++ {
+		sum -= math.Abs(ringArea(p[i]))
+	}
+
+	return sum
+}
+
+func multiPolygonArea(mp geo.MultiPolygon) (sum float64) {
+	for _, p := range mp {
+		sum += polygonArea(p)
+	}
+	return
+}
