@@ -35,3 +35,15 @@ func NewLayers(layers map[string]*geojson.FeatureCollection) Layers {
 
 	return result
 }
+
+// ToFeatureCollections converts the layers to sets of geojson feature collections.
+func (ls Layers) ToFeatureCollections() map[string]*geojson.FeatureCollection {
+	result := make(map[string]*geojson.FeatureCollection, len(ls))
+	for _, l := range ls {
+		result[l.Name] = &geojson.FeatureCollection{
+			Features: l.Features,
+		}
+	}
+
+	return result
+}
