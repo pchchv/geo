@@ -1,6 +1,10 @@
 package mvt
 
-import "github.com/pchchv/geo/geojson"
+import (
+	"github.com/pchchv/geo/geojson"
+	"github.com/pchchv/geo/maptile"
+	"github.com/pchchv/geo/project"
+)
 
 const DefaultExtent = 4096
 
@@ -20,6 +24,25 @@ func NewLayer(name string, fc *geojson.FeatureCollection) *Layer {
 		Version:  1,
 		Extent:   DefaultExtent,
 		Features: fc.Features,
+	}
+}
+
+// ProjectToTile will project all the geometries in the
+// layer to tile coordinates based on the
+// extent and the mercator projection.
+func (l *Layer) ProjectToTile(tile maptile.Tile) {
+	p := newProjection(tile, l.Extent)
+	for _, f := range l.Features {
+		f.Geometry = project.Geometry(f.Geometry, p.ToTile)
+	}
+}
+
+// ProjectToWGS84 will project all the geometries backed to
+// WGS84 from the extent and mercator projection.
+func (l *Layer) ProjectToWGS84(tile maptile.Tile) {
+	p := newProjection(tile, l.Extent)
+	for _, f := range l.Features {
+		f.Geometry = project.Geometry(f.Geometry, p.ToWGS84)
 	}
 }
 
