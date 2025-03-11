@@ -1,4 +1,3 @@
 package vectortile
 
-//-----go:generate protoc --go_out=.,import_path=vectortile:. vector_tile.proto
-//go:generate protoc --proto_path=../../../../..:../../../../gogo/protobuf/protobuf:. --gogofast_out=.,import_path=vectortile:. vector_tile.proto
+//go:generate protoc --go_out=. --go_opt=paths=source_relative --experimental_allow_proto3_optional vector_tile.proto
