@@ -22,3 +22,16 @@ func NewLayer(name string, fc *geojson.FeatureCollection) *Layer {
 		Features: fc.Features,
 	}
 }
+
+// Layers is a set of layers.
+type Layers []*Layer
+
+// NewLayers creates a set of layers given a set of feature collections.
+func NewLayers(layers map[string]*geojson.FeatureCollection) Layers {
+	result := make(Layers, 0, len(layers))
+	for name, fc := range layers {
+		result = append(result, NewLayer(name, fc))
+	}
+
+	return result
+}
