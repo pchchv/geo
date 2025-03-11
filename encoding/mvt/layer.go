@@ -70,3 +70,20 @@ func (ls Layers) ToFeatureCollections() map[string]*geojson.FeatureCollection {
 
 	return result
 }
+
+// ProjectToTile will project all the
+// geometries in all layers to tile coordinates based on the
+// extent and the mercator projection.
+func (ls Layers) ProjectToTile(tile maptile.Tile) {
+	for _, l := range ls {
+		l.ProjectToTile(tile)
+	}
+}
+
+// ProjectToWGS84 will project all the geometries in all
+// the layers backed to WGS84 from the extent and mercator projection.
+func (ls Layers) ProjectToWGS84(tile maptile.Tile) {
+	for _, l := range ls {
+		l.ProjectToWGS84(tile)
+	}
+}
