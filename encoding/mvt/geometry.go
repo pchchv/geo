@@ -1,7 +1,9 @@
 package mvt
 
 import (
+	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"github.com/pchchv/geo/encoding/mvt/vectortile"
 )
@@ -29,6 +31,34 @@ func (kve *keyValueEncoder) Key(s string) (i uint32) {
 	}
 
 	return
+}
+
+func (kve *keyValueEncoder) Value(v interface{}) (uint32, error) {
+	// If a type is not comparable can't figure out uniqueness in the hash,
+	// we also can't encode it into a vectortile.Tile_Value.
+	// So we encoded it as a json string, which is what other encoders also do.
+	if v == nil || !reflect.TypeOf(v).Comparable() {
+		if data, err := json.Marshal(v); err != nil {
+			return 0, fmt.Errorf("uncomparable: %T", v)
+		} else {
+			v = string(data)
+		}
+	}
+
+	if i, ok := kve.valueMap[v]; ok {
+		return i, nil
+	}
+
+	tv, err := encodeValue(v)
+	if err != nil {
+		return 0, err
+	}
+
+	i := uint32(len(kve.Values))
+	kve.Values = append(kve.Values, tv)
+	kve.valueMap[v] = i
+
+	return i, nil
 }
 
 func encodeValue(v interface{}) (*vectortile.Tile_Value, error) {
