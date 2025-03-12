@@ -16,3 +16,14 @@ func newKeyValueEncoder() *keyValueEncoder {
 		valueMap: make(map[interface{}]uint32),
 	}
 }
+
+func (kve *keyValueEncoder) Key(s string) (i uint32) {
+	if i, ok := kve.keyMap[s]; !ok {
+		i = uint32(len(kve.Keys))
+		kve.Keys = append(kve.Keys, s)
+		kve.keyMap[s] = i
+	}
+
+	return
+}
+
