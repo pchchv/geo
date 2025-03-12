@@ -1,6 +1,12 @@
 package mvt
 
-import "strconv"
+import (
+	"fmt"
+	"sort"
+	"strconv"
+
+	"github.com/pchchv/geo/geojson"
+)
 
 func convertIntID(i int) *uint64 {
 	if i < 0 {
@@ -51,4 +57,24 @@ func convertID(id interface{}) *uint64 {
 	}
 
 	return nil
+}
+
+func encodeProperties(kve *keyValueEncoder, properties geojson.Properties) ([]uint32, error) {
+	tags := make([]uint32, 0, 2*len(properties))
+	kve.keySortBuffer = kve.keySortBuffer[:0]
+	for k := range properties {
+		kve.keySortBuffer = append(kve.keySortBuffer, k)
+	}
+	sort.Strings(kve.keySortBuffer)
+
+	for _, k := range kve.keySortBuffer {
+		ki := kve.Key(k)
+		if vi, err := kve.Value(properties[k]); err != nil {
+			return nil, fmt.Errorf("property %s: %v", k, err)
+		} else {
+			tags = append(tags, ki, vi)
+		}
+	}
+
+	return tags, nil
 }
