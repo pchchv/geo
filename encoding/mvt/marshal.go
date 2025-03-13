@@ -8,7 +8,40 @@ import (
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/encoding/mvt/vectortile"
 	"github.com/pchchv/geo/geojson"
+	"google.golang.org/protobuf/proto"
 )
+
+// Marshal encodes a set of layers into a Mapbox Vector Tile format.
+// Features that have a nil geometry,
+// for some reason, will be skipped and not included.
+func Marshal(layers Layers) ([]byte, error) {
+	vt := &vectortile.Tile{
+		Layers: make([]*vectortile.Tile_Layer, 0, len(layers)),
+	}
+
+	for _, l := range layers {
+		v, e := l.Version, l.Extent
+		kve := newKeyValueEncoder()
+		layer := &vectortile.Tile_Layer{
+			Name:     &l.Name,
+			Version:  &v,
+			Extent:   &e,
+			Features: make([]*vectortile.Tile_Feature, 0, len(l.Features)),
+		}
+
+		for _, f := range l.Features {
+			if err := addFeature(layer, kve, f); err != nil {
+				return nil, err
+			}
+		}
+
+		layer.Keys = kve.Keys
+		layer.Values = kve.Values
+		vt.Layers = append(vt.Layers, layer)
+	}
+
+	return proto.Marshal(vt)
+}
 
 func convertIntID(i int) *uint64 {
 	if i < 0 {
