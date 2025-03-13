@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/encoding/mvt/vectortile"
 )
 
@@ -77,6 +78,19 @@ func newGeomEncoder(l int) *geomEncoder {
 
 func (ge *geomEncoder) ClosePath() {
 	ge.Data = append(ge.Data, (1<<3)|closePath)
+}
+
+func (ge *geomEncoder) addPoints(points []geo.Point) {
+	for i := range points {
+		x := int32(points[i][0]) - ge.prevX
+		y := int32(points[i][1]) - ge.prevY
+		ge.prevX = int32(points[i][0])
+		ge.prevY = int32(points[i][1])
+		ge.Data = append(ge.Data,
+			uint32((x<<1)^(x>>31)),
+			uint32((y<<1)^(y>>31)),
+		)
+	}
 }
 
 func encodeValue(v interface{}) (*vectortile.Tile_Value, error) {
