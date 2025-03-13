@@ -159,3 +159,24 @@ func encodeValue(v interface{}) (*vectortile.Tile_Value, error) {
 
 	return tv, nil
 }
+
+func elMLS(mls geo.MultiLineString) (c int) {
+	for _, ls := range mls {
+		c += 2 + 2*len(ls)
+	}
+	return
+}
+
+func elP(p geo.Polygon) (c int) {
+	for _, r := range p {
+		c += 3 + 2*len(r)
+	}
+	return
+}
+
+func elMP(mp geo.MultiPolygon) (c int) {
+	for _, p := range mp {
+		c += elP(p)
+	}
+	return
+}
