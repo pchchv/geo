@@ -2,6 +2,7 @@ package mvt
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -179,4 +180,71 @@ func elMP(mp geo.MultiPolygon) (c int) {
 		c += elP(p)
 	}
 	return
+}
+
+func encodeGeometry(g geo.Geometry) (vectortile.Tile_GeomType, []uint32, error) {
+	switch g := g.(type) {
+	case geo.Point:
+		e := newGeomEncoder(3)
+		e.MoveTo([]geo.Point{g})
+		return vectortile.Tile_POINT, e.Data, nil
+	case geo.MultiPoint:
+		e := newGeomEncoder(1 + 2*len(g))
+		e.MoveTo([]geo.Point(g))
+		return vectortile.Tile_POINT, e.Data, nil
+	case geo.LineString:
+		e := newGeomEncoder(2 + 2*len(g))
+		e.MoveTo([]geo.Point{g[0]})
+		e.LineTo([]geo.Point(g[1:]))
+		return vectortile.Tile_LINESTRING, e.Data, nil
+	case geo.MultiLineString:
+		e := newGeomEncoder(elMLS(g))
+		for _, ls := range g {
+			e.MoveTo([]geo.Point{ls[0]})
+			e.LineTo([]geo.Point(ls[1:]))
+		}
+		return vectortile.Tile_LINESTRING, e.Data, nil
+	case geo.Ring:
+		e := newGeomEncoder(3 + 2*len(g))
+		e.MoveTo([]geo.Point{g[0]})
+		if g.Closed() {
+			e.LineTo([]geo.Point(g[1 : len(g)-1]))
+		} else {
+			e.LineTo([]geo.Point(g[1:]))
+		}
+		e.ClosePath()
+		return vectortile.Tile_POLYGON, e.Data, nil
+	case geo.Polygon:
+		e := newGeomEncoder(elP(g))
+		for _, r := range g {
+			e.MoveTo([]geo.Point{r[0]})
+			if r.Closed() {
+				e.LineTo([]geo.Point(r[1 : len(r)-1]))
+			} else {
+				e.LineTo([]geo.Point(r[1:]))
+			}
+			e.ClosePath()
+		}
+		return vectortile.Tile_POLYGON, e.Data, nil
+	case geo.MultiPolygon:
+		e := newGeomEncoder(elMP(g))
+		for _, p := range g {
+			for _, r := range p {
+				e.MoveTo([]geo.Point{r[0]})
+				if r.Closed() {
+					e.LineTo([]geo.Point(r[1 : len(r)-1]))
+				} else {
+					e.LineTo([]geo.Point(r[1:]))
+				}
+				e.ClosePath()
+			}
+		}
+		return vectortile.Tile_POLYGON, e.Data, nil
+	case geo.Collection:
+		return 0, nil, errors.New("geometry collections are not supported")
+	case geo.Bound:
+		return encodeGeometry(g.ToPolygon())
+	default:
+		panic(fmt.Sprintf("geometry type not supported: %T", g))
+	}
 }
