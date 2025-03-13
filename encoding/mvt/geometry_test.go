@@ -1,8 +1,16 @@
 package mvt
 
 import (
+	"fmt"
+	"reflect"
 	"testing"
 )
+
+type stringer int
+
+func (s stringer) String() string {
+	return fmt.Sprintf("%d", s)
+}
 
 func TestKeyValueEncoder_JSON(t *testing.T) {
 	kve := newKeyValueEncoder()
