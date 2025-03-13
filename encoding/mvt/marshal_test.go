@@ -132,3 +132,11 @@ func loadGeoJSON(t testing.TB, tile maptile.Tile) map[string]*geojson.FeatureCol
 
 	return r
 }
+
+func tileEpsilon(tile maptile.Tile) (float64, float64) {
+	b := tile.Bound()
+	xEpsilon := (b.Max[0] - b.Min[0]) / 4096 * 2 // allowed error
+	yEpsilon := (b.Max[1] - b.Min[1]) / 4096 * 2
+
+	return xEpsilon, yEpsilon
+}
