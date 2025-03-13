@@ -8,6 +8,8 @@ import (
 	"github.com/pchchv/geo/encoding/mvt/vectortile"
 )
 
+const closePath = 7
+
 type keyValueEncoder struct {
 	Keys          []string
 	keyMap        map[string]uint32
@@ -71,6 +73,10 @@ func newGeomEncoder(l int) *geomEncoder {
 	return &geomEncoder{
 		Data: make([]uint32, 0, l),
 	}
+}
+
+func (ge *geomEncoder) ClosePath() {
+	ge.Data = append(ge.Data, (1<<3)|closePath)
 }
 
 func encodeValue(v interface{}) (*vectortile.Tile_Value, error) {
