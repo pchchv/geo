@@ -1,9 +1,13 @@
 package mvt
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/gogo/protobuf/proto"
+	"github.com/pchchv/geo/encoding/mvt/vectortile"
 )
 
 type stringer int
@@ -145,4 +149,26 @@ func TestEncodeValue(t *testing.T) {
 	if _, err := encodeValue(input); err == nil {
 		t.Errorf("expecting error: %v", err)
 	}
+}
+
+func sliceToIterator(vals []uint32) ([]uint32, error) {
+	feature := &vectortile.Tile_Feature{
+		Geometry: vals,
+	}
+
+	data, err := proto.Marshal(feature)
+	if err != nil {
+		return nil, err
+	}
+
+	var decodedFeature vectortile.Tile_Feature
+	if err := proto.Unmarshal(data, &decodedFeature); err != nil {
+		return nil, err
+	}
+
+	if decodedFeature.Geometry == nil {
+		return nil, errors.New("no geometry field found")
+	}
+
+	return decodedFeature.Geometry, nil
 }
