@@ -248,3 +248,29 @@ func encodeGeometry(g geo.Geometry) (vectortile.Tile_GeomType, []uint32, error) 
 		panic(fmt.Sprintf("geometry type not supported: %T", g))
 	}
 }
+
+func unzigzag(v uint32) float64 {
+	return float64(int32(((v >> 1) & ((1 << 32) - 1)) ^ -(v & 1)))
+}
+
+func decodeValue(v *vectortile.Tile_Value) interface{} {
+	if v != nil {
+		if v.StringValue != nil {
+			return *v.StringValue
+		} else if v.FloatValue != nil {
+			return float64(*v.FloatValue)
+		} else if v.DoubleValue != nil {
+			return *v.DoubleValue
+		} else if v.IntValue != nil {
+			return float64(*v.IntValue)
+		} else if v.UintValue != nil {
+			return float64(*v.UintValue)
+		} else if v.SintValue != nil {
+			return float64(*v.SintValue)
+		} else if v.BoolValue != nil {
+			return *v.BoolValue
+		}
+	}
+
+	return nil
+}
