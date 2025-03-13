@@ -1,12 +1,16 @@
 package mvt
 
 import (
+	"encoding/json"
+	"fmt"
 	"math"
+	"os"
 	"reflect"
 	"testing"
 
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/geojson"
+	"github.com/pchchv/geo/maptile"
 )
 
 func compareProperties(t testing.TB, result, expected geojson.Properties) {
@@ -104,4 +108,27 @@ func comparePoints(t testing.TB, e, r []geo.Point, xEpsilon, yEpsilon float64) {
 			t.Errorf("%d y: %f != %f    %f", i, r[i][1], e[i][1], ye)
 		}
 	}
+}
+
+func loadMVT(t testing.TB, tile maptile.Tile) []byte {
+	data, err := os.ReadFile(fmt.Sprintf("testdata/%d-%d-%d.mvt", tile.Z, tile.X, tile.Y))
+	if err != nil {
+		t.Fatalf("failed to load mvt file: %e", err)
+	}
+
+	return data
+}
+
+func loadGeoJSON(t testing.TB, tile maptile.Tile) map[string]*geojson.FeatureCollection {
+	data, err := os.ReadFile(fmt.Sprintf("testdata/%d-%d-%d.json", tile.Z, tile.X, tile.Y))
+	if err != nil {
+		t.Fatalf("failed to load mvt file: %e", err)
+	}
+
+	r := make(map[string]*geojson.FeatureCollection)
+	if err = json.Unmarshal(data, &r); err != nil {
+		t.Fatalf("unmarshal error: %e", err)
+	}
+
+	return r
 }
