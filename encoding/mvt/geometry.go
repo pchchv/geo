@@ -61,6 +61,18 @@ func (kve *keyValueEncoder) Value(v interface{}) (uint32, error) {
 	return i, nil
 }
 
+type geomEncoder struct {
+	prevX int32
+	prevY int32
+	Data  []uint32
+}
+
+func newGeomEncoder(l int) *geomEncoder {
+	return &geomEncoder{
+		Data: make([]uint32, 0, l),
+	}
+}
+
 func encodeValue(v interface{}) (*vectortile.Tile_Value, error) {
 	tv := &vectortile.Tile_Value{}
 	switch t := v.(type) {
