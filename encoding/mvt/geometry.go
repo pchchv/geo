@@ -9,7 +9,11 @@ import (
 	"github.com/pchchv/geo/encoding/mvt/vectortile"
 )
 
-const closePath = 7
+const (
+	moveTo    = 1
+	lineTo    = 2
+	closePath = 7
+)
 
 type keyValueEncoder struct {
 	Keys          []string
@@ -78,6 +82,18 @@ func newGeomEncoder(l int) *geomEncoder {
 
 func (ge *geomEncoder) ClosePath() {
 	ge.Data = append(ge.Data, (1<<3)|closePath)
+}
+
+func (ge *geomEncoder) MoveTo(points []geo.Point) {
+	l := uint32(len(points))
+	ge.Data = append(ge.Data, (l<<3)|moveTo)
+	ge.addPoints(points)
+}
+
+func (ge *geomEncoder) LineTo(points []geo.Point) {
+	l := uint32(len(points))
+	ge.Data = append(ge.Data, (l<<3)|lineTo)
+	ge.addPoints(points)
 }
 
 func (ge *geomEncoder) addPoints(points []geo.Point) {
