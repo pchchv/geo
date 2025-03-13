@@ -1,6 +1,8 @@
 package mvt
 
 import (
+	"bytes"
+	"compress/gzip"
 	"fmt"
 	"sort"
 	"strconv"
@@ -41,6 +43,27 @@ func Marshal(layers Layers) ([]byte, error) {
 	}
 
 	return proto.Marshal(vt)
+}
+
+// MarshalGzipped marshal the layers into Mapbox Vector Tile format and gzip the result.
+// Often MVT data is already gzipped to a file, such as an mbtiles file.
+func MarshalGzipped(layers Layers) ([]byte, error) {
+	data, err := Marshal(layers)
+	if err != nil {
+		return nil, err
+	}
+
+	buf := bytes.NewBuffer(nil)
+	gzwriter := gzip.NewWriter(buf)
+	if _, err = gzwriter.Write(data); err != nil {
+		return nil, err
+	}
+
+	if err = gzwriter.Close(); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 func convertIntID(i int) *uint64 {
