@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/pchchv/geo"
+	"github.com/pchchv/geo/encoding/mvt/vectortile"
 	"github.com/pchchv/geo/geojson"
 )
 
@@ -77,4 +79,39 @@ func encodeProperties(kve *keyValueEncoder, properties geojson.Properties) ([]ui
 	}
 
 	return tags, nil
+}
+
+func addFeature(layer *vectortile.Tile_Layer, kve *keyValueEncoder, f *geojson.Feature) error {
+	if f.Geometry == nil {
+		return nil
+	}
+
+	if f.Geometry.GeoJSONType() == "GeometryCollection" {
+		for _, g := range f.Geometry.(geo.Collection) {
+			return addSingleGeometryFeature(layer, kve, g, f.Properties, f.ID)
+		}
+	}
+
+	return addSingleGeometryFeature(layer, kve, f.Geometry, f.Properties, f.ID)
+}
+
+func addSingleGeometryFeature(layer *vectortile.Tile_Layer, kve *keyValueEncoder, g geo.Geometry, p geojson.Properties, id interface{}) error {
+	geomType, encodedGeometry, err := encodeGeometry(g)
+	if err != nil {
+		return fmt.Errorf("error encoding geometry: %v : %s", g, err.Error())
+	}
+
+	tags, err := encodeProperties(kve, p)
+	if err != nil {
+		return fmt.Errorf("error encoding geometry: %v : %s", g, err.Error())
+	}
+
+	layer.Features = append(layer.Features, &vectortile.Tile_Feature{
+		Id:       convertID(id),
+		Tags:     tags,
+		Type:     &geomType,
+		Geometry: encodedGeometry,
+	})
+
+	return nil
 }
