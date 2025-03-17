@@ -1,13 +1,12 @@
 package mvt
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pchchv/geo/encoding/mvt/vectortile"
+	"github.com/pchchv/pbr"
 )
 
 type stringer int
@@ -21,7 +20,7 @@ func TestKeyValueEncoder_JSON(t *testing.T) {
 	t.Run("non comparable value", func(t *testing.T) {
 		i, err := kve.Value([]int{1, 2, 3})
 		if err != nil {
-			t.Fatalf("failed to get value: %v", err)
+			t.Fatalf("failed to get value: %e", err)
 		}
 
 		value := decodeValue(kve.Values[i])
@@ -33,7 +32,7 @@ func TestKeyValueEncoder_JSON(t *testing.T) {
 	t.Run("nil value", func(t *testing.T) {
 		i, err := kve.Value(nil)
 		if err != nil {
-			t.Fatalf("failed to get value: %v", err)
+			t.Fatalf("failed to get value: %e", err)
 		}
 
 		value := decodeValue(kve.Values[i])
@@ -130,7 +129,7 @@ func TestEncodeValue(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			val, err := encodeValue(tc.input)
 			if err != nil {
-				t.Fatalf("encode failure: %v", err)
+				t.Fatalf("encode failure: %e", err)
 			}
 
 			result := decodeValue(val)
@@ -147,28 +146,34 @@ func TestEncodeValue(t *testing.T) {
 	}
 
 	if _, err := encodeValue(input); err == nil {
-		t.Errorf("expecting error: %v", err)
+		t.Errorf("expecting error: %e", err)
 	}
 }
 
-func sliceToIterator(vals []uint32) ([]uint32, error) {
+func sliceToIterator(vals []uint32) *pbr.Iterator {
 	feature := &vectortile.Tile_Feature{
 		Geometry: vals,
 	}
 
-	data, err := proto.Marshal(feature)
+	data, err := feature.Marshal()
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	var decodedFeature vectortile.Tile_Feature
-	if err := proto.Unmarshal(data, &decodedFeature); err != nil {
-		return nil, err
+	msg := pbr.New(data)
+	for msg.Next() {
+		switch msg.FieldNumber() {
+		case 4:
+			iter, err := msg.Iterator(nil)
+			if err != nil {
+				panic(err)
+			}
+
+			return iter
+		default:
+			msg.Skip()
+		}
 	}
 
-	if decodedFeature.Geometry == nil {
-		return nil, errors.New("no geometry field found")
-	}
-
-	return decodedFeature.Geometry, nil
+	panic("unreachable")
 }

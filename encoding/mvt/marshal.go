@@ -7,10 +7,10 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/encoding/mvt/vectortile"
 	"github.com/pchchv/geo/geojson"
+	"google.golang.org/protobuf/proto"
 )
 
 // Marshal encodes a set of layers into a Mapbox Vector Tile format.
