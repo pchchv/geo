@@ -8,6 +8,7 @@ import (
 	fmt "fmt"
 	github_com_gogo_protobuf_proto "github.com/gogo/protobuf/proto"
 	proto "github.com/gogo/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -76,6 +77,11 @@ type Tile struct {
 	proto.XXX_InternalExtensions `json:"-"`
 	XXX_unrecognized             []byte `json:"-"`
 	XXX_sizecache                int32  `json:"-"`
+}
+
+// ProtoReflect implements protoreflect.ProtoMessage.
+func (m *Tile) ProtoReflect() protoreflect.Message {
+	panic("unimplemented")
 }
 
 func (m *Tile) Reset()         { *m = Tile{} }
