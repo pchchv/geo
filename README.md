@@ -6,6 +6,7 @@ Package *geo* defines a set of types for working with 2D geo and planar/projecte
 - **GeoJSON** - support as part of the [`geojson`](geojson) sub-package.
 - **Simple types** - allow for natural operations using the `make`, `append`, `len`, `[s:e]` builtins.
 - **DB integration** - dDirect to type from DB query results by scanning WKB data directly into types.
+- **Mapbox Vector Tile** - encoding and decoding as part of the [`encoding/mvt`](encoding/mvt) sub-package.
 
 ## Types
 
@@ -103,6 +104,39 @@ See the [geojson](geojson) readme for more details.
 
 Types also support BSON so they can be used directly when working with MongoDB.
 
+## Mapbox Vector Tiles
+
+The [encoding/mvt](encoding/mvt) sub-package implements Marshalling and
+Unmarshalling [MVT](https://www.mapbox.com/vector-tiles/) data.
+This package uses sets of `geojson.FeatureCollection` to define the layers,
+keyed by the layer name. For example:
+
+```go
+collections := map[string]*geojson.FeatureCollection{}
+
+// Convert to a layers object and project to tile coordinates.
+layers := mvt.NewLayers(collections)
+layers.ProjectToTile(maptile.New(x, y, z))
+
+// In order to be used as source for MapboxGL geometries need to be clipped
+// to max allowed extent. (uncomment next line)
+// layers.Clip(mvt.MapboxGLDefaultExtentBound)
+
+// Simplifier the geometry now that it's in tile coordinate space.
+layers.Simplifier(simplifier.DouglasPeucker(1.0))
+
+// Depending on use-case remove empty geometry, those too small to be
+// represented in this tile space.
+// In this case lines shorter than 1, and areas smaller than 2.
+layers.RemoveEmpty(1.0, 2.0)
+
+// encoding using the Mapbox Vector Tile protobuf encoding.
+data, err := mvt.Marshal(layers) // this data is NOT gzipped.
+
+// Sometimes MVT data is stored and transfered gzip compressed. In that case:
+data, err := mvt.MarshalGzipped(layers)
+```
+
 ## List of subpackage utilities
 
 - [`clip`](clip) - clipping geometry to a bounding box
@@ -115,3 +149,4 @@ Types also support BSON so they can be used directly when working with MongoDB.
 - [`resample`](resample) - resample points in a line string geometry
 - [`simplifier`](simplifier) - linear geometry simplifications like Douglas-Peucker
 - [`tilecover`](tilecover) - computes the covering set of tiles
+- [`encoding/mvt`](encoding/mvt) - encoded and decoding from [Mapbox Vector Tiles](https://www.mapbox.com/vector-tiles/)
