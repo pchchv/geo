@@ -1,8 +1,11 @@
 package mvt
 
 import (
+	"bytes"
+	"compress/gzip"
 	"errors"
 	"fmt"
+	"io"
 
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/encoding/mvt/vectortile"
@@ -20,6 +23,23 @@ func Unmarshal(data []byte) (Layers, error) {
 	}
 
 	return layers, err
+}
+
+// UnmarshalGzipped takes gzipped Mapbox Vector Tile (MVT)
+// data and unzips it before decoding it into a set of layers,
+// with no coordinates projected.
+func UnmarshalGzipped(data []byte) (Layers, error) {
+	gzreader, err := gzip.NewReader(bytes.NewBuffer(data))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gzreader: %e", err)
+	}
+
+	decoded, err := io.ReadAll(gzreader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unzip: %e", err)
+	}
+
+	return Unmarshal(decoded)
 }
 
 type decoder struct {
