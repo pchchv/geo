@@ -10,6 +10,18 @@ import (
 	"github.com/pchchv/pbr"
 )
 
+// Unmarshal takes Mapbox Vector Tile (MVT)
+// data and converts it into a set of layers,
+// but does not project coordinates.
+func Unmarshal(data []byte) (Layers, error) {
+	layers, err := unmarshalTile(data)
+	if err != nil && dataIsGZipped(data) {
+		return nil, errors.New("failed to unmarshal, data possibly gzipped")
+	}
+
+	return layers, err
+}
+
 type decoder struct {
 	keys     []string
 	values   []interface{}
