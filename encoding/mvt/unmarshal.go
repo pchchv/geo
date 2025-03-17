@@ -119,3 +119,62 @@ func (gd *geomDecoder) decodeLineString() (geo.Geometry, error) {
 
 	return mls, nil
 }
+
+func (gd *geomDecoder) decodePoint() (geo.Geometry, error) {
+	_, count, err := gd.cmdAndCount()
+	if err != nil {
+		return nil, err
+	}
+
+	if count == 1 {
+		return gd.NextPoint()
+	}
+
+	mp := make(geo.MultiPoint, 0, count)
+	for i := uint32(0); i < count; i++ {
+		p, err := gd.NextPoint()
+		if err != nil {
+			return nil, err
+		}
+		mp = append(mp, p)
+	}
+
+	return mp, nil
+}
+
+func (gd *geomDecoder) decodePolygon() (geo.Geometry, error) {
+	var mp geo.MultiPolygon
+	var p geo.Polygon
+	for !gd.done() {
+		ls, err := gd.decodeLine()
+		if err != nil {
+			return nil, err
+		}
+
+		r := geo.Ring(ls)
+		cmd, _, err := gd.cmdAndCount()
+		if err != nil {
+			return nil, err
+		} else if cmd == closePath && !r.Closed() {
+			r = append(r, r[0])
+		}
+
+		// figure out if new polygon
+		if len(mp) == 0 && len(p) == 0 {
+			p = append(p, r)
+		} else {
+			if r.Orientation() == geo.CCW {
+				mp = append(mp, p)
+				p = geo.Polygon{r}
+			} else {
+				p = append(p, r)
+			}
+		}
+	}
+
+	if len(mp) == 0 {
+		return p, nil
+	}
+
+	return append(mp, p), nil
+}
