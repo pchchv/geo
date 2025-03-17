@@ -177,3 +177,37 @@ func sliceToIterator(vals []uint32) *pbr.Iterator {
 
 	panic("unreachable")
 }
+
+func compareGeometry(t testing.TB, geomType vectortile.Tile_GeomType, input []uint32, expected geo.Geometry) {
+	t.Helper()
+	gt, encoded, err := encodeGeometry(expected)
+	if err != nil {
+		t.Fatalf("failed to encode: %e", err)
+	}
+
+	if gt != geomType {
+		t.Errorf("type mismatch: %v != %v", gt, geomType)
+	}
+
+	if !reflect.DeepEqual(encoded, input) {
+		t.Logf("%v", encoded)
+		t.Logf("%v", input)
+		t.Errorf("different encoding")
+	}
+
+	d := &decoder{geom: sliceToIterator(input)}
+	result, err := d.Geometry(geomType)
+	if err != nil {
+		t.Fatalf("decode error: %e", err)
+	}
+
+	if result.GeoJSONType() != expected.GeoJSONType() {
+		t.Errorf("types different: %s != %s", result.GeoJSONType(), expected.GeoJSONType())
+	}
+
+	if !geo.Equal(result, expected) {
+		t.Logf("%v", result)
+		t.Logf("%v", expected)
+		t.Errorf("geometry not equal")
+	}
+}
