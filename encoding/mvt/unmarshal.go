@@ -106,6 +106,78 @@ func (d *decoder) Feature(msg *pbr.Message) (feature *geojson.Feature, err error
 	return feature, nil
 }
 
+func (d *decoder) Layer(msg *pbr.Message) (layer *Layer, err error) {
+	d.Reset()
+	layer = &Layer{
+		Version: vectortile.Default_Tile_Layer_Version,
+		Extent:  vectortile.Default_Tile_Layer_Extent,
+	}
+
+	for msg.Next() {
+		switch msg.FieldNumber() {
+		case 15: // version
+			if v, err := msg.Uint32(); err != nil {
+				return nil, err
+			} else {
+				layer.Version = v
+			}
+		case 1: // name
+			if s, err := msg.String(); err != nil {
+				return nil, err
+			} else {
+				layer.Name = s
+			}
+		case 2: // feature
+			if data, err := msg.MessageData(); err != nil {
+				return nil, err
+			} else {
+				d.features = append(d.features, data)
+			}
+		case 3: // keys
+			if s, err := msg.String(); err != nil {
+				return nil, err
+			} else {
+				d.keys = append(d.keys, s)
+			}
+		case 4: // values
+			d.valMsg, err = msg.Message(d.valMsg)
+			if err != nil {
+				return nil, err
+			}
+
+			if v, err := decodeValueMsg(d.valMsg); err != nil {
+				return nil, err
+			} else {
+				d.values = append(d.values, v)
+			}
+		case 5: // extent
+			if e, err := msg.Uint32(); err != nil {
+				return nil, err
+			} else {
+				layer.Extent = e
+			}
+		default:
+			msg.Skip()
+		}
+	}
+
+	if msg.Error() != nil {
+		return nil, msg.Error()
+	}
+
+	layer.Features = make([]*geojson.Feature, len(d.features))
+	for i, data := range d.features {
+		msg.Reset(data)
+		if f, err := d.Feature(msg); err != nil {
+			return nil, err
+		} else {
+			layer.Features[i] = f
+		}
+	}
+
+	return layer, nil
+}
+
 // geomDecoder holds state for geometry decoding.
 type geomDecoder struct {
 	iter  *pbr.Iterator
