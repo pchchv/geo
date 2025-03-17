@@ -6,6 +6,7 @@ import (
 
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/encoding/mvt/vectortile"
+	"github.com/pchchv/geo/geojson"
 	"github.com/pchchv/pbr"
 )
 
@@ -40,6 +41,69 @@ func (d *decoder) Reset() {
 	d.keys = d.keys[:0]
 	d.values = d.values[:0]
 	d.features = d.features[:0]
+}
+
+func (d *decoder) Feature(msg *pbr.Message) (feature *geojson.Feature, err error) {
+	var geomType vectortile.Tile_GeomType
+	feature = &geojson.Feature{Type: "Feature"}
+	for msg.Next() {
+		switch msg.FieldNumber() {
+		case 1: // id
+			if id, err := msg.Uint64(); err != nil {
+				return nil, err
+			} else {
+				feature.ID = float64(id)
+			}
+		case 2: //tags, repeated packed
+			d.tags, err = msg.Iterator(d.tags)
+			if err != nil {
+				return nil, err
+			}
+
+			count := d.tags.Count(pbr.WireTypeVarint)
+			feature.Properties = make(geojson.Properties, count/2)
+			for d.tags.HasNext() {
+				k, err := d.tags.Uint32()
+				if err != nil {
+					return nil, err
+				}
+
+				v, err := d.tags.Uint32()
+				if err != nil {
+					return nil, err
+				}
+
+				if len(d.keys) <= int(k) || len(d.values) <= int(v) {
+					continue
+				}
+				feature.Properties[d.keys[k]] = d.values[v]
+			}
+		case 3: // geomtype
+			if t, err := msg.Int32(); err != nil {
+				return nil, err
+			} else {
+				geomType = vectortile.Tile_GeomType(t)
+			}
+		case 4: // geometry
+			if d.geom, err = msg.Iterator(d.geom); err != nil {
+				return nil, err
+			}
+		default:
+			msg.Skip()
+		}
+	}
+
+	if msg.Error() != nil {
+		return nil, msg.Error()
+	}
+
+	if geo, err := d.Geometry(geomType); err != nil {
+		return nil, err
+	} else {
+		feature.Geometry = geo
+	}
+
+	return feature, nil
 }
 
 // geomDecoder holds state for geometry decoding.
