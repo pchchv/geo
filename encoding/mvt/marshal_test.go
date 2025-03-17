@@ -257,7 +257,7 @@ func TestUnmarshal(t *testing.T) {
 func TestUnmarshalGzippedTileWithRegularUnmarshalFunction(t *testing.T) {
 	t.Run("15-8956-12223", func(t *testing.T) {
 		tile := maptile.New(8956, 12223, 15)
-		if _, err := Unmarshal(loadMVT(t, tile)); err != ErrDataIsGZipped {
+		if _, err := Unmarshal(loadMVT(t, tile)); err.Error() != "failed to unmarshal, data possibly gzipped" {
 			t.Fatal()
 		}
 	})
