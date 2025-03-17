@@ -1,6 +1,9 @@
 package mvt
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/pchchv/geo"
 	"github.com/pchchv/pbr"
 )
@@ -37,4 +40,29 @@ func (gd *geomDecoder) NextPoint() (geo.Point, error) {
 	gd.prev[1] += unzigzag(v)
 
 	return gd.prev, nil
+}
+
+func (gd *geomDecoder) done() bool {
+	return !gd.iter.HasNext()
+}
+
+func (gd *geomDecoder) cmdAndCount() (uint32, uint32, error) {
+	if gd.done() {
+		return 0, 0, errors.New("no more data")
+	}
+
+	v, err := gd.iter.Uint32()
+	if err != nil {
+		return 0, 0, err
+	}
+	gd.used++
+
+	cmd, count := v&0x07, v>>3
+	if cmd != closePath {
+		if v := gd.used + int(2*count); gd.count < v {
+			return 0, 0, fmt.Errorf("data cut short: needed %d, have %d", v, gd.count)
+		}
+	}
+
+	return cmd, count, nil
 }
