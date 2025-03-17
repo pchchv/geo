@@ -558,3 +558,53 @@ func tileEpsilon(tile maptile.Tile) (float64, float64) {
 
 	return xEpsilon, yEpsilon
 }
+
+func BenchmarkMarshal(b *testing.B) {
+	layers := NewLayers(loadGeoJSON(b, maptile.New(17896, 24449, 16)))
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := Marshal(layers)
+		if err != nil {
+			b.Fatalf("unexpected error: %e", err)
+		}
+	}
+}
+
+func BenchmarkUnmarshal(b *testing.B) {
+	layers := NewLayers(loadGeoJSON(b, maptile.New(17896, 24449, 16)))
+	data, err := Marshal(layers)
+	if err != nil {
+		b.Fatalf("marshal error: %e", err)
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := Unmarshal(data)
+		if err != nil {
+			b.Fatalf("unexpected error: %e", err)
+		}
+	}
+}
+
+func BenchmarkProjectToTile(b *testing.B) {
+	tile := maptile.New(17896, 24449, 16)
+	layers := NewLayers(loadGeoJSON(b, maptile.New(17896, 24449, 16)))
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		layers.ProjectToTile(tile)
+	}
+}
+
+func BenchmarkProjectToGeo(b *testing.B) {
+	tile := maptile.New(17896, 24449, 16)
+	layers := NewLayers(loadGeoJSON(b, maptile.New(17896, 24449, 16)))
+	layers.ProjectToTile(tile)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		layers.ProjectToWGS84(tile)
+	}
+}
