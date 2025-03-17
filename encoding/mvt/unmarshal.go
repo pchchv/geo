@@ -267,3 +267,68 @@ func (gd *geomDecoder) decodePolygon() (geo.Geometry, error) {
 
 	return append(mp, p), nil
 }
+
+func decodeValueMsg(msg *pbr.Message) (interface{}, error) {
+	for msg.Next() {
+		switch msg.FieldNumber() {
+		case 1:
+			return msg.String()
+		case 2:
+			v, err := msg.Float()
+			return float64(v), err
+		case 3:
+			return msg.Double()
+		case 4:
+			v, err := msg.Int64()
+			return float64(v), err
+		case 5:
+			v, err := msg.Uint64()
+			return float64(v), err
+		case 6:
+			v, err := msg.Sint64()
+			return float64(v), err
+		case 7:
+			return msg.Bool()
+		default:
+			msg.Skip()
+		}
+	}
+
+	return nil, msg.Error()
+}
+
+func unmarshalTile(data []byte) (layers Layers, err error) {
+	var m *pbr.Message
+	msg := pbr.New(data)
+	d := &decoder{}
+	for msg.Next() {
+		switch msg.FieldNumber() {
+		case 3:
+			m, err = msg.Message(m)
+			if err != nil {
+				return nil, err
+			}
+
+			layer, err := d.Layer(m)
+			if err != nil {
+				return nil, err
+			}
+
+			layers = append(layers, layer)
+		default:
+			msg.Skip()
+		}
+	}
+
+	if msg.Error() != nil {
+		return nil, msg.Error()
+	}
+
+	return layers, nil
+}
+
+// Check if data is GZipped by reading the "magic bytes"
+// Rarely this method can result in false positives
+func dataIsGZipped(data []byte) bool {
+	return (data[0] == 0x1F && data[1] == 0x8B)
+}
