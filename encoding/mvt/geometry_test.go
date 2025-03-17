@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/encoding/mvt/vectortile"
 	"github.com/pchchv/pbr"
 )
@@ -209,5 +210,165 @@ func compareGeometry(t testing.TB, geomType vectortile.Tile_GeomType, input []ui
 		t.Logf("%v", result)
 		t.Logf("%v", expected)
 		t.Errorf("geometry not equal")
+	}
+}
+
+func TestGeometry_Point(t *testing.T) {
+	cases := []struct {
+		name   string
+		input  []uint32
+		output geo.Point
+	}{
+		{
+			name:   "basic point",
+			input:  []uint32{9, 50, 34},
+			output: geo.Point{25, 17},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			compareGeometry(t, vectortile.Tile_POINT, tc.input, tc.output)
+		})
+	}
+}
+
+func TestGeometry_MultiPoint(t *testing.T) {
+	cases := []struct {
+		name   string
+		input  []uint32
+		output geo.MultiPoint
+	}{
+		{
+			name:   "basic multi point",
+			input:  []uint32{17, 10, 14, 3, 9},
+			output: geo.MultiPoint{{5, 7}, {3, 2}},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			compareGeometry(t, vectortile.Tile_POINT, tc.input, tc.output)
+		})
+	}
+}
+
+func TestGeometry_LineString(t *testing.T) {
+	cases := []struct {
+		name   string
+		input  []uint32
+		output geo.LineString
+	}{
+		{
+			name:   "basic line string",
+			input:  []uint32{9, 4, 4, 18, 0, 16, 16, 0},
+			output: geo.LineString{{2, 2}, {2, 10}, {10, 10}},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			compareGeometry(t, vectortile.Tile_LINESTRING, tc.input, tc.output)
+		})
+	}
+}
+
+func TestGeometry_MultiLineString(t *testing.T) {
+	cases := []struct {
+		name   string
+		input  []uint32
+		output geo.MultiLineString
+	}{
+		{
+			name:  "basic multi line string",
+			input: []uint32{9, 4, 4, 18, 0, 16, 16, 0, 9, 17, 17, 10, 4, 8},
+			output: geo.MultiLineString{
+				{{2, 2}, {2, 10}, {10, 10}},
+				{{1, 1}, {3, 5}},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			compareGeometry(t, vectortile.Tile_LINESTRING, tc.input, tc.output)
+		})
+	}
+}
+
+func TestGeometry_Polygon(t *testing.T) {
+	cases := []struct {
+		name   string
+		input  []uint32
+		output geo.Polygon
+	}{
+		{
+			name:  "basic polygon",
+			input: []uint32{9, 6, 12, 18, 10, 12, 24, 44, 15},
+			output: geo.Polygon{
+				{{3, 6}, {8, 12}, {20, 34}, {3, 6}},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			compareGeometry(t, vectortile.Tile_POLYGON, tc.input, tc.output)
+		})
+	}
+
+	// should encode a ring as a polygon
+	ring := geo.Ring{{3, 6}, {8, 12}, {20, 34}, {3, 6}}
+	gt, data, err := encodeGeometry(ring)
+	if err != nil {
+		t.Fatalf("encode failed: %e", err)
+	}
+
+	if gt != vectortile.Tile_POLYGON {
+		t.Errorf("should be polygon type: %v", gt)
+	}
+
+	if !reflect.DeepEqual(data, []uint32{9, 6, 12, 18, 10, 12, 24, 44, 15}) {
+		t.Errorf("incorrect data: %v", data)
+	}
+
+	// should leave work for unclosed rings
+	_, data, _ = encodeGeometry(ring[:len(ring)-1])
+	if !reflect.DeepEqual(data, []uint32{9, 6, 12, 18, 10, 12, 24, 44, 15}) {
+		t.Errorf("incorrect data: %v", data)
+	}
+
+	_, data, _ = encodeGeometry(geo.Polygon{ring[:len(ring)-1]})
+	if !reflect.DeepEqual(data, []uint32{9, 6, 12, 18, 10, 12, 24, 44, 15}) {
+		t.Errorf("incorrect data: %v", data)
+	}
+}
+
+func TestGeometry_MultiPolygon(t *testing.T) {
+	cases := []struct {
+		name   string
+		input  []uint32
+		output geo.MultiPolygon
+	}{
+		{
+			name: "multi polygon",
+			input: []uint32{9, 0, 0, 26, 20, 0, 0, 20, 19, 0, 15, 9, 22, 2, 26,
+				18, 0, 0, 18, 17, 0, 15, 9, 4, 13, 26, 0, 8, 8, 0, 0, 7, 15},
+			output: geo.MultiPolygon{
+				{
+					{{0, 0}, {10, 0}, {10, 10}, {0, 10}, {0, 0}},
+				},
+				{
+					{{11, 11}, {20, 11}, {20, 20}, {11, 20}, {11, 11}},
+					{{13, 13}, {13, 17}, {17, 17}, {17, 13}, {13, 13}},
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			compareGeometry(t, vectortile.Tile_POLYGON, tc.input, tc.output)
+		})
 	}
 }
