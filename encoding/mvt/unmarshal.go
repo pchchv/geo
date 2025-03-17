@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/pchchv/geo"
+	"github.com/pchchv/geo/encoding/mvt/vectortile"
 	"github.com/pchchv/pbr"
 )
 
@@ -15,6 +16,30 @@ type decoder struct {
 	valMsg   *pbr.Message
 	tags     *pbr.Iterator
 	geom     *pbr.Iterator
+}
+
+func (d *decoder) Geometry(geomType vectortile.Tile_GeomType) (geo.Geometry, error) {
+	gd := &geomDecoder{iter: d.geom, count: d.geom.Count(pbr.WireTypeVarint)}
+	if gd.count < 2 {
+		return nil, fmt.Errorf("geom is not long enough: %v", gd.count)
+	}
+
+	switch geomType {
+	case vectortile.Tile_POINT:
+		return gd.decodePoint()
+	case vectortile.Tile_LINESTRING:
+		return gd.decodeLineString()
+	case vectortile.Tile_POLYGON:
+		return gd.decodePolygon()
+	default:
+		return nil, fmt.Errorf("unknown geometry type: %v", geomType)
+	}
+}
+
+func (d *decoder) Reset() {
+	d.keys = d.keys[:0]
+	d.values = d.values[:0]
+	d.features = d.features[:0]
 }
 
 // geomDecoder holds state for geometry decoding.
