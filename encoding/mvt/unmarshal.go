@@ -66,3 +66,56 @@ func (gd *geomDecoder) cmdAndCount() (uint32, uint32, error) {
 
 	return cmd, count, nil
 }
+
+func (gd *geomDecoder) decodeLine() (geo.LineString, error) {
+	cmd, count, err := gd.cmdAndCount()
+	if err != nil {
+		return nil, err
+	}
+
+	if cmd != moveTo || count != 1 {
+		return nil, errors.New("first command not one moveTo")
+	}
+
+	first, err := gd.NextPoint()
+	if err != nil {
+		return nil, err
+	}
+
+	cmd, count, err = gd.cmdAndCount()
+	if err != nil {
+		return nil, err
+	} else if cmd != lineTo {
+		return nil, errors.New("second command not a lineTo")
+	}
+
+	ls := make(geo.LineString, 0, count+1)
+	ls = append(ls, first)
+	for i := uint32(0); i < count; i++ {
+		p, err := gd.NextPoint()
+		if err != nil {
+			return nil, err
+		}
+		ls = append(ls, p)
+	}
+
+	return ls, nil
+}
+
+func (gd *geomDecoder) decodeLineString() (geo.Geometry, error) {
+	var mls geo.MultiLineString
+	for !gd.done() {
+		ls, err := gd.decodeLine()
+		if err != nil {
+			return nil, err
+		}
+
+		if gd.done() && len(mls) == 0 {
+			return ls, nil
+		}
+
+		mls = append(mls, ls)
+	}
+
+	return mls, nil
+}
