@@ -19,6 +19,10 @@ const (
 	multiPolygonType       uint32    = 6
 	geometryCollectionType uint32    = 7
 	ewkbType               uint32    = 0x20000000
+	// limits so that bad data can't come in and pre-allocate too much memory
+	// well-formed data with fewer elements will allocate the correct amount of space just fine
+	MaxPointsAlloc = 10000
+	MaxMultiAlloc  = 100
 )
 
 var DefaultByteOrder binary.ByteOrder = binary.LittleEndian // order used for marshalling or encoding
