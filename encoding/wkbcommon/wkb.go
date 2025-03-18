@@ -230,7 +230,16 @@ func unmarshalUint32(order byteOrder, buf []byte) uint32 {
 	if order == littleEndian {
 		return binary.LittleEndian.Uint32(buf)
 	}
+
 	return binary.BigEndian.Uint32(buf)
+}
+
+func readUint32(r io.Reader, order byteOrder, buf []byte) (uint32, error) {
+	if _, err := io.ReadFull(r, buf); err != nil {
+		return 0, err
+	}
+
+	return unmarshalUint32(order, buf), nil
 }
 
 func byteOrderType(buf []byte) (byteOrder, uint32, error) {
@@ -251,4 +260,35 @@ func byteOrderType(buf []byte) (byteOrder, uint32, error) {
 	// the type which is 4 bytes
 	typ := unmarshalUint32(order, buf[1:])
 	return order, typ, nil
+}
+
+func readByteOrderType(r io.Reader, buf []byte) (order byteOrder, typ uint32, srid int, err error) {
+	// the byte order is the first byte
+	if _, err := r.Read(buf[:1]); err != nil {
+		return 0, 0, 0, err
+	}
+
+	if buf[0] == 0 {
+		order = bigEndian
+	} else if buf[0] == 1 {
+		order = littleEndian
+	} else {
+		return 0, 0, 0, ErrNotWKB
+	}
+
+	// the type which is 4 bytes
+	typ, err = readUint32(r, order, buf[:4])
+	if err != nil {
+		return 0, 0, 0, err
+	} else if typ&ewkbType == 0 {
+		return order, typ, 0, nil
+	}
+
+	if u, err := readUint32(r, order, buf[:4]); err != nil {
+		return 0, 0, 0, err
+	} else {
+		srid = int(u)
+	}
+
+	return order, typ & 0x0ff, srid, nil
 }
