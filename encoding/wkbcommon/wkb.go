@@ -131,3 +131,49 @@ func (e *Encoder) writeTypePrefix(t uint32, l int, srid int) error {
 	_, err := e.w.Write(e.buf[:12])
 	return err
 }
+
+// GeomLength helps to perform pre-allocation during a marshal.
+func GeomLength(geom geo.Geometry, ewkb bool) (ewkbExtra int) {
+	if ewkb {
+		ewkbExtra = 4
+	}
+
+	switch g := geom.(type) {
+	case geo.Point:
+		return 21 + ewkbExtra
+	case geo.MultiPoint:
+		return 9 + 21*len(g) + ewkbExtra
+	case geo.LineString:
+		return 9 + 16*len(g) + ewkbExtra
+	case geo.MultiLineString:
+		var sum int
+		for _, ls := range g {
+			sum += 9 + 16*len(ls)
+		}
+
+		return 9 + sum + ewkbExtra
+	case geo.Polygon:
+		var sum int
+		for _, r := range g {
+			sum += 4 + 16*len(r)
+		}
+
+		return 9 + sum + ewkbExtra
+	case geo.MultiPolygon:
+		var sum int
+		for _, c := range g {
+			sum += GeomLength(c, false)
+		}
+
+		return 9 + sum + ewkbExtra
+	case geo.Collection:
+		var sum int
+		for _, c := range g {
+			sum += GeomLength(c, false)
+		}
+
+		return 9 + sum + ewkbExtra
+	}
+
+	return 0
+}
