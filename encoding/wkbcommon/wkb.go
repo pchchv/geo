@@ -161,6 +161,18 @@ func (e *Encoder) writeTypePrefix(t uint32, l int, srid int) error {
 	return err
 }
 
+// Decoder decodes (E)WKB geometry off of the stream.
+type Decoder struct {
+	r io.Reader
+}
+
+// NewDecoder will create a new (E)WKB decoder.
+func NewDecoder(r io.Reader) *Decoder {
+	return &Decoder{
+		r: r,
+	}
+}
+
 // GeomLength helps to perform pre-allocation during a marshal.
 func GeomLength(geom geo.Geometry, ewkb bool) (ewkbExtra int) {
 	if ewkb {
