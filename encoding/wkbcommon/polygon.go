@@ -1,6 +1,8 @@
 package wkbcommon
 
 import (
+	"errors"
+	"io"
 	"math"
 
 	"github.com/pchchv/geo"
@@ -96,6 +98,65 @@ func readMultiPolygon(r io.Reader, order byteOrder, buf []byte) (geo.MultiPolygo
 			return nil, err
 		}
 
+		result = append(result, p)
+	}
+
+	return result, nil
+}
+
+func unmarshalPolygon(order byteOrder, data []byte) (geo.Polygon, error) {
+	if len(data) < 4 {
+		return nil, ErrNotWKB
+	}
+
+	num := unmarshalUint32(order, data)
+	data = data[4:]
+	alloc := num
+	if alloc > MaxMultiAlloc {
+		// invalid data can come in here and allocate tons of memory.
+		alloc = MaxMultiAlloc
+	}
+
+	result := make(geo.Polygon, 0, alloc)
+	for i := 0; i < int(num); i++ {
+		ps, err := unmarshalPoints(order, data)
+		if err != nil {
+			return nil, err
+		}
+
+		data = data[16*len(ps)+4:]
+		result = append(result, geo.Ring(ps))
+	}
+
+	return result, nil
+}
+
+func unmarshalMultiPolygon(order byteOrder, data []byte) (geo.MultiPolygon, error) {
+	if len(data) < 4 {
+		return nil, ErrNotWKB
+	}
+
+	num := unmarshalUint32(order, data)
+	data = data[4:]
+	alloc := num
+	if alloc > MaxMultiAlloc {
+		// invalid data can come in here and allocate tons of memory.
+		alloc = MaxMultiAlloc
+	}
+
+	result := make(geo.MultiPolygon, 0, alloc)
+	for i := 0; i < int(num); i++ {
+		p, _, err := ScanPolygon(data)
+		if err != nil {
+			return nil, err
+		}
+
+		l := 9
+		for _, r := range p {
+			l += 4 + 16*len(r)
+		}
+
+		data = data[l:]
 		result = append(result, p)
 	}
 
