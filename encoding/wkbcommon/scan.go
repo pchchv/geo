@@ -54,3 +54,53 @@ func ScanMultiPoint(data []byte) (geo.MultiPoint, int, error) {
 
 	return nil, 0, ErrIncorrectGeometry
 }
+
+// ScanLineString takes binary wkb and decodes it into a line string.
+func ScanLineString(data []byte) (geo.LineString, int, error) {
+	order, typ, srid, data, err := unmarshalByteOrderType(data)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	switch typ {
+	case lineStringType:
+		if ls, err := unmarshalLineString(order, data); err != nil {
+			return nil, 0, err
+		} else {
+			return ls, srid, nil
+		}
+	case multiLineStringType:
+		if mls, err := unmarshalMultiLineString(order, data); err != nil {
+			return nil, 0, err
+		} else if len(mls) == 1 {
+			return mls[0], srid, nil
+		}
+	}
+
+	return nil, 0, ErrIncorrectGeometry
+}
+
+// ScanMultiLineString takes binary wkb and decodes it into a multi-line string.
+func ScanMultiLineString(data []byte) (geo.MultiLineString, int, error) {
+	order, typ, srid, data, err := unmarshalByteOrderType(data)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	switch typ {
+	case lineStringType:
+		if ls, err := unmarshalLineString(order, data); err != nil {
+			return nil, 0, err
+		} else {
+			return geo.MultiLineString{ls}, srid, nil
+		}
+	case multiLineStringType:
+		if ls, err := unmarshalMultiLineString(order, data); err != nil {
+			return nil, 0, err
+		} else {
+			return ls, srid, nil
+		}
+	}
+
+	return nil, 0, ErrIncorrectGeometry
+}
