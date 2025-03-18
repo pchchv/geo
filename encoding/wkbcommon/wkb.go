@@ -1,6 +1,7 @@
 package wkbcommon
 
 import (
+	"bytes"
 	"encoding/binary"
 	"io"
 
@@ -115,6 +116,34 @@ func (e *Encoder) Encode(geom geo.Geometry, srid int) error {
 // SetByteOrder overrides the default byte order set when the encoder was created.
 func (e *Encoder) SetByteOrder(bo binary.ByteOrder) {
 	e.order = bo
+}
+
+// Marshal encodes the geometry with the given byte order.
+func Marshal(geom geo.Geometry, srid int, byteOrder ...binary.ByteOrder) ([]byte, error) {
+	buf := bytes.NewBuffer(make([]byte, 0, GeomLength(geom, srid != 0)))
+	e := NewEncoder(buf)
+	if len(byteOrder) > 0 {
+		e.SetByteOrder(byteOrder[0])
+	}
+
+	if err := e.Encode(geom, srid); err != nil {
+		return nil, err
+	}
+
+	if buf.Len() == 0 {
+		return nil, nil
+	}
+
+	return buf.Bytes(), nil
+}
+
+// MustMarshal encodes geometry and panics when an error occurs.
+func MustMarshal(geom geo.Geometry, srid int, byteOrder ...binary.ByteOrder) []byte {
+	if d, err := Marshal(geom, srid, byteOrder...); err != nil {
+		panic(err)
+	} else {
+		return d
+	}
 }
 
 func (e *Encoder) writeTypePrefix(t uint32, l int, srid int) error {
