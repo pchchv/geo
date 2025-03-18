@@ -225,3 +225,30 @@ func GeomLength(geom geo.Geometry, ewkb bool) (ewkbExtra int) {
 
 	return 0
 }
+
+func unmarshalUint32(order byteOrder, buf []byte) uint32 {
+	if order == littleEndian {
+		return binary.LittleEndian.Uint32(buf)
+	}
+	return binary.BigEndian.Uint32(buf)
+}
+
+func byteOrderType(buf []byte) (byteOrder, uint32, error) {
+	if len(buf) < 6 {
+		return 0, 0, ErrNotWKB
+	}
+
+	var order byteOrder
+	switch buf[0] {
+	case 0:
+		order = bigEndian
+	case 1:
+		order = littleEndian
+	default:
+		return 0, 0, ErrNotWKBHeader
+	}
+
+	// the type which is 4 bytes
+	typ := unmarshalUint32(order, buf[1:])
+	return order, typ, nil
+}
