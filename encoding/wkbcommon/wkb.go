@@ -184,6 +184,41 @@ func NewDecoder(r io.Reader) *Decoder {
 	}
 }
 
+// Decode decodes the next geometry off of the stream.
+func (d *Decoder) Decode() (geo.Geometry, int, error) {
+	buf := make([]byte, 8)
+	order, typ, srid, err := readByteOrderType(d.r, buf)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var g geo.Geometry
+	switch typ {
+	case pointType:
+		g, err = readPoint(d.r, order, buf)
+	case multiPointType:
+		g, err = readMultiPoint(d.r, order, buf)
+	case lineStringType:
+		g, err = readLineString(d.r, order, buf)
+	case multiLineStringType:
+		g, err = readMultiLineString(d.r, order, buf)
+	case polygonType:
+		g, err = readPolygon(d.r, order, buf)
+	case multiPolygonType:
+		g, err = readMultiPolygon(d.r, order, buf)
+	case geometryCollectionType:
+		g, err = readCollection(d.r, order, buf)
+	default:
+		return nil, 0, ErrUnsupportedGeometry
+	}
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return g, srid, nil
+}
+
 // GeomLength helps to perform pre-allocation during a marshal.
 func GeomLength(geom geo.Geometry, ewkb bool) (ewkbExtra int) {
 	if ewkb {
