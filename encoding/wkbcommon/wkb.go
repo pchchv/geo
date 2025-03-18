@@ -226,22 +226,6 @@ func GeomLength(geom geo.Geometry, ewkb bool) (ewkbExtra int) {
 	return 0
 }
 
-func unmarshalUint32(order byteOrder, buf []byte) uint32 {
-	if order == littleEndian {
-		return binary.LittleEndian.Uint32(buf)
-	}
-
-	return binary.BigEndian.Uint32(buf)
-}
-
-func readUint32(r io.Reader, order byteOrder, buf []byte) (uint32, error) {
-	if _, err := io.ReadFull(r, buf); err != nil {
-		return 0, err
-	}
-
-	return unmarshalUint32(order, buf), nil
-}
-
 func byteOrderType(buf []byte) (byteOrder, uint32, error) {
 	if len(buf) < 6 {
 		return 0, 0, ErrNotWKB
@@ -260,6 +244,39 @@ func byteOrderType(buf []byte) (byteOrder, uint32, error) {
 	// the type which is 4 bytes
 	typ := unmarshalUint32(order, buf[1:])
 	return order, typ, nil
+}
+
+func unmarshalByteOrderType(buf []byte) (byteOrder, uint32, int, []byte, error) {
+	order, typ, err := byteOrderType(buf)
+	if err != nil {
+		return 0, 0, 0, nil, err
+	} else if typ&ewkbType == 0 {
+		// regular wkb, no srid
+		return order, typ & 0x0F, 0, buf[5:], nil
+	}
+
+	if len(buf) < 10 {
+		return 0, 0, 0, nil, ErrNotWKB
+	}
+
+	srid := unmarshalUint32(order, buf[5:])
+	return order, typ & 0x0F, int(srid), buf[9:], nil
+}
+
+func unmarshalUint32(order byteOrder, buf []byte) uint32 {
+	if order == littleEndian {
+		return binary.LittleEndian.Uint32(buf)
+	}
+
+	return binary.BigEndian.Uint32(buf)
+}
+
+func readUint32(r io.Reader, order byteOrder, buf []byte) (uint32, error) {
+	if _, err := io.ReadFull(r, buf); err != nil {
+		return 0, err
+	}
+
+	return unmarshalUint32(order, buf), nil
 }
 
 func readByteOrderType(r io.Reader, buf []byte) (order byteOrder, typ uint32, srid int, err error) {
