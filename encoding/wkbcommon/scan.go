@@ -104,3 +104,53 @@ func ScanMultiLineString(data []byte) (geo.MultiLineString, int, error) {
 
 	return nil, 0, ErrIncorrectGeometry
 }
+
+// ScanPolygon takes binary wkb and decodes it into a polygon.
+func ScanPolygon(data []byte) (geo.Polygon, int, error) {
+	order, typ, srid, data, err := unmarshalByteOrderType(data)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	switch typ {
+	case polygonType:
+		if p, err := unmarshalPolygon(order, data); err != nil {
+			return nil, 0, err
+		} else {
+			return p, srid, nil
+		}
+	case multiPolygonType:
+		if mp, err := unmarshalMultiPolygon(order, data); err != nil {
+			return nil, 0, err
+		} else if len(mp) == 1 {
+			return mp[0], srid, nil
+		}
+	}
+
+	return nil, 0, ErrIncorrectGeometry
+}
+
+// ScanMultiPolygon takes binary wkb and decodes it into a multi-polygon.
+func ScanMultiPolygon(data []byte) (geo.MultiPolygon, int, error) {
+	order, typ, srid, data, err := unmarshalByteOrderType(data)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	switch typ {
+	case polygonType:
+		if p, err := unmarshalPolygon(order, data); err != nil {
+			return nil, 0, err
+		} else {
+			return geo.MultiPolygon{p}, srid, nil
+		}
+	case multiPolygonType:
+		if mp, err := unmarshalMultiPolygon(order, data); err != nil {
+			return nil, 0, err
+		} else {
+			return mp, srid, nil
+		}
+	}
+
+	return nil, 0, ErrIncorrectGeometry
+}
