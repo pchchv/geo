@@ -219,6 +219,44 @@ func (d *Decoder) Decode() (geo.Geometry, int, error) {
 	return g, srid, nil
 }
 
+// Unmarshal will decode the type into a Geometry.
+func Unmarshal(data []byte) (geo.Geometry, int, error) {
+	order, typ, srid, geomData, err := unmarshalByteOrderType(data)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var g geo.Geometry
+	switch typ {
+	case pointType:
+		g, err = unmarshalPoint(order, geomData)
+	case multiPointType:
+		g, err = unmarshalMultiPoint(order, geomData)
+	case lineStringType:
+		g, err = unmarshalLineString(order, geomData)
+	case multiLineStringType:
+		g, err = unmarshalMultiLineString(order, geomData)
+	case polygonType:
+		g, err = unmarshalPolygon(order, geomData)
+	case multiPolygonType:
+		g, err = unmarshalMultiPolygon(order, geomData)
+	case geometryCollectionType:
+		if g, _, err := NewDecoder(bytes.NewReader(data)).Decode(); err == io.EOF || err == io.ErrUnexpectedEOF {
+			return nil, 0, ErrNotWKB
+		} else {
+			return g, srid, err
+		}
+	default:
+		return nil, 0, ErrUnsupportedGeometry
+	}
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return g, srid, nil
+}
+
 // GeomLength helps to perform pre-allocation during a marshal.
 func GeomLength(geom geo.Geometry, ewkb bool) (ewkbExtra int) {
 	if ewkb {
