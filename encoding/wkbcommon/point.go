@@ -25,3 +25,17 @@ func (e *Encoder) writePoint(p geo.Point, srid int) (err error) {
 	_, err = e.w.Write(e.buf)
 	return
 }
+
+func (e *Encoder) writeMultiPoint(mp geo.MultiPoint, srid int) (err error) {
+	if err = e.writeTypePrefix(multiPointType, len(mp), srid); err != nil {
+		return
+	}
+
+	for _, p := range mp {
+		if err = e.Encode(p, 0); err != nil {
+			return
+		}
+	}
+
+	return nil
+}
