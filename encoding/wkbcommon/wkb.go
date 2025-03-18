@@ -9,17 +9,24 @@ import (
 )
 
 const (
-	pointType              uint32 = 1
-	multiPointType         uint32 = 4
-	lineStringType         uint32 = 2
-	multiLineStringType    uint32 = 5
-	polygonType            uint32 = 3
-	multiPolygonType       uint32 = 6
-	geometryCollectionType uint32 = 7
-	ewkbType               uint32 = 0x20000000
+	bigEndian              byteOrder = 0
+	littleEndian           byteOrder = 1
+	pointType              uint32    = 1
+	multiPointType         uint32    = 4
+	lineStringType         uint32    = 2
+	multiLineStringType    uint32    = 5
+	polygonType            uint32    = 3
+	multiPolygonType       uint32    = 6
+	geometryCollectionType uint32    = 7
+	ewkbType               uint32    = 0x20000000
 )
 
 var DefaultByteOrder binary.ByteOrder = binary.LittleEndian // order used for marshalling or encoding
+
+// ByteOrder represents little or big endian encoding.
+// binary.ByteOrder is not used because that is an
+// interface that leaks to the heap all over the place.
+type byteOrder int
 
 // Encoder encodes a geometry as (E)WKB for the
 // writer specified at creation.
