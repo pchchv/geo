@@ -11,6 +11,8 @@ const (
 	multiPointType      uint32 = 4
 	lineStringType      uint32 = 2
 	multiLineStringType uint32 = 5
+	polygonType         uint32 = 3
+	multiPolygonType    uint32 = 6
 	ewkbType            uint32 = 0x20000000
 )
 
