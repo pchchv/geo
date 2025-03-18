@@ -3,8 +3,9 @@ package wkbcommon
 import (
 	"encoding/binary"
 	"io"
-)
 
+	"github.com/pchchv/geo"
+)
 
 const (
 	pointType              uint32 = 1
@@ -32,6 +33,82 @@ func NewEncoder(w io.Writer) *Encoder {
 	return &Encoder{
 		w:     w,
 		order: DefaultByteOrder,
+	}
+}
+
+// Encode will write the geometry encoded as (E)WKB to the given writer.
+func (e *Encoder) Encode(geom geo.Geometry, srid int) error {
+	switch g := geom.(type) {
+	case nil:
+		// nil values should not write any data
+		return nil
+	case geo.MultiPoint:
+		// empty sizes will still write an empty version of that type
+		if g == nil {
+			return nil
+		}
+	case geo.LineString:
+		if g == nil {
+			return nil
+		}
+	case geo.MultiLineString:
+		if g == nil {
+			return nil
+		}
+	case geo.Polygon:
+		if g == nil {
+			return nil
+		}
+	case geo.MultiPolygon:
+		if g == nil {
+			return nil
+		}
+	case geo.Collection:
+		if g == nil {
+			return nil
+		}
+	// deal with types that are not supported by wkb
+	case geo.Ring:
+		if g == nil {
+			return nil
+		}
+		geom = geo.Polygon{g}
+	case geo.Bound:
+		geom = g.ToPolygon()
+	}
+
+	var b []byte
+	if e.order == binary.LittleEndian {
+		b = []byte{1}
+	} else {
+		b = []byte{0}
+	}
+
+	if _, err := e.w.Write(b); err != nil {
+		return err
+	}
+
+	if e.buf == nil {
+		e.buf = make([]byte, 16)
+	}
+
+	switch g := geom.(type) {
+	case geo.Point:
+		return e.writePoint(g, srid)
+	case geo.MultiPoint:
+		return e.writeMultiPoint(g, srid)
+	case geo.LineString:
+		return e.writeLineString(g, srid)
+	case geo.MultiLineString:
+		return e.writeMultiLineString(g, srid)
+	case geo.Polygon:
+		return e.writePolygon(g, srid)
+	case geo.MultiPolygon:
+		return e.writeMultiPolygon(g, srid)
+	case geo.Collection:
+		return e.writeCollection(g, srid)
+	default:
+		panic("unsupported type")
 	}
 }
 
