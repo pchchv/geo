@@ -142,3 +142,30 @@ func unmarshalPoints(order byteOrder, data []byte) ([]geo.Point, error) {
 
 	return result, nil
 }
+
+func unmarshalMultiPoint(order byteOrder, data []byte) (geo.MultiPoint, error) {
+	if len(data) < 4 {
+		return nil, ErrNotWKB
+	}
+
+	num := unmarshalUint32(order, data)
+	data = data[4:]
+	alloc := num
+	if alloc > MaxMultiAlloc {
+		// invalid data can come in here and allocate tons of memory.
+		alloc = MaxMultiAlloc
+	}
+	result := make(geo.MultiPoint, 0, alloc)
+
+	for i := 0; i < int(num); i++ {
+		p, _, err := ScanPoint(data)
+		if err != nil {
+			return nil, err
+		}
+
+		data = data[21:]
+		result = append(result, p)
+	}
+
+	return result, nil
+}
