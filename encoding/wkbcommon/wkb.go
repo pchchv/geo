@@ -112,6 +112,11 @@ func (e *Encoder) Encode(geom geo.Geometry, srid int) error {
 	}
 }
 
+// SetByteOrder overrides the default byte order set when the encoder was created.
+func (e *Encoder) SetByteOrder(bo binary.ByteOrder) {
+	e.order = bo
+}
+
 func (e *Encoder) writeTypePrefix(t uint32, l int, srid int) error {
 	if srid == 0 {
 		e.order.PutUint32(e.buf, t)
