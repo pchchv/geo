@@ -5,7 +5,11 @@ import (
 	"io"
 )
 
-const ewkbType uint32 = 0x20000000
+
+const (
+	pointType uint32 = 1
+	ewkbType  uint32 = 0x20000000
+)
 
 var DefaultByteOrder binary.ByteOrder = binary.LittleEndian // order used for marshalling or encoding
 
