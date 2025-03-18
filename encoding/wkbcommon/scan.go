@@ -1,7 +1,9 @@
 package wkbcommon
 
 import (
+	"bytes"
 	"errors"
+	"io"
 
 	"github.com/pchchv/geo"
 )
@@ -153,4 +155,21 @@ func ScanMultiPolygon(data []byte) (geo.MultiPolygon, int, error) {
 	}
 
 	return nil, 0, ErrIncorrectGeometry
+}
+
+// ScanCollection takes binary wkb and decodes it into a collection.
+func ScanCollection(data []byte) (geo.Collection, int, error) {
+	m, srid, err := NewDecoder(bytes.NewReader(data)).Decode()
+	if err == io.EOF || err == io.ErrUnexpectedEOF {
+		return nil, 0, ErrNotWKB
+	} else if err != nil {
+		return nil, 0, err
+	}
+
+	switch p := m.(type) {
+	case geo.Collection:
+		return p, srid, nil
+	default:
+		return nil, 0, ErrIncorrectGeometry
+	}
 }
