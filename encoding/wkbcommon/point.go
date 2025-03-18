@@ -90,3 +90,55 @@ func readMultiPoint(r io.Reader, order byteOrder, buf []byte) (geo.MultiPoint, e
 
 	return result, nil
 }
+
+func unmarshalPoint(order byteOrder, buf []byte) (geo.Point, error) {
+	if len(buf) < 16 {
+		return geo.Point{}, ErrNotWKB
+	}
+
+	var p geo.Point
+	if order == littleEndian {
+		p[0] = math.Float64frombits(binary.LittleEndian.Uint64(buf))
+		p[1] = math.Float64frombits(binary.LittleEndian.Uint64(buf[8:]))
+	} else {
+		p[0] = math.Float64frombits(binary.BigEndian.Uint64(buf))
+		p[1] = math.Float64frombits(binary.BigEndian.Uint64(buf[8:]))
+	}
+
+	return p, nil
+}
+
+func unmarshalPoints(order byteOrder, data []byte) ([]geo.Point, error) {
+	if len(data) < 4 {
+		return nil, ErrNotWKB
+	}
+
+	num := unmarshalUint32(order, data)
+	data = data[4:]
+	if len(data) < int(num*16) {
+		return nil, ErrNotWKB
+	}
+
+	alloc := num
+	if alloc > MaxPointsAlloc {
+		// invalid data can come in here and allocate tons of memory.
+		alloc = MaxPointsAlloc
+	}
+	result := make([]geo.Point, 0, alloc)
+
+	if order == littleEndian {
+		for i := 0; i < int(num); i++ {
+			result = append(result, geo.Point{})
+			result[i][0] = math.Float64frombits(binary.LittleEndian.Uint64(data[16*i:]))
+			result[i][1] = math.Float64frombits(binary.LittleEndian.Uint64(data[16*i+8:]))
+		}
+	} else {
+		for i := 0; i < int(num); i++ {
+			result = append(result, geo.Point{})
+			result[i][0] = math.Float64frombits(binary.BigEndian.Uint64(data[16*i:]))
+			result[i][1] = math.Float64frombits(binary.BigEndian.Uint64(data[16*i+8:]))
+		}
+	}
+
+	return result, nil
+}
