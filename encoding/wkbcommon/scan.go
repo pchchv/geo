@@ -2,18 +2,148 @@ package wkbcommon
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/pchchv/geo"
 )
 
 var (
-	ErrNotWKB              = errors.New("wkbcommon: invalid data")         // returned when unmarshalling WKB and the data is not valid
-	ErrNotWKBHeader        = errors.New("wkbcommon: invalid header data")  // returned when unmarshalling first few bytes and there is an issue
-	ErrIncorrectGeometry   = errors.New("wkbcommon: incorrect geometry")   // returned when unmarshalling WKB data into the wrong type (e. g. linestring into a point)
-	ErrUnsupportedGeometry = errors.New("wkbcommon: unsupported geometry") // returned when geometry type is not supported by this package
+	ErrNotWKB              = errors.New("wkbcommon: invalid data")              // returned when unmarshalling WKB and the data is not valid
+	ErrNotWKBHeader        = errors.New("wkbcommon: invalid header data")       // returned when unmarshalling first few bytes and there is an issue
+	ErrIncorrectGeometry   = errors.New("wkbcommon: incorrect geometry")        // returned when unmarshalling WKB data into the wrong type (e. g. linestring into a point)
+	ErrUnsupportedGeometry = errors.New("wkbcommon: unsupported geometry")      // returned when geometry type is not supported by this package
+	ErrUnsupportedDataType = errors.New("wkbcommon: scan value must be []byte") // returned when the data type is not []byte
 )
+
+// Scan scans the input []byte data into a geometry.
+// This can be a geo geometry type pointer or, if nil,
+// the scanner.Geometry attribute.
+func Scan(g, d interface{}) (geo.Geometry, int, bool, error) {
+	if d == nil {
+		return nil, 0, false, nil
+	}
+
+	data, ok := d.([]byte)
+	if !ok {
+		return nil, 0, false, ErrUnsupportedDataType
+	} else if data == nil {
+		return nil, 0, false, nil
+	} else if len(data) < 5 {
+		return nil, 0, false, ErrNotWKB
+	}
+
+	// go-pg will return ST_AsBinary(*) data as `\xhexencoded` which
+	// needs to be converted to true binary for further decoding
+	// code detects the \x prefix and then converts the rest from Hex to binary
+	if data[0] == byte('\\') && data[1] == byte('x') {
+		n, err := hex.Decode(data, data[2:])
+		if err != nil {
+			return nil, 0, false, fmt.Errorf("thought the data was hex with prefix, but it is not: %v", err)
+		}
+		data = data[:n]
+	}
+
+	// also possible is just straight hex encoded
+	// in this case the bo bit can be '0x00' or '0x01'
+	if data[0] == '0' && (data[1] == '0' || data[1] == '1') {
+		n, err := hex.Decode(data, data)
+		if err != nil {
+			return nil, 0, false, fmt.Errorf("thought the data was hex, but it is not: %v", err)
+		}
+		data = data[:n]
+	}
+
+	switch g := g.(type) {
+	case nil:
+		m, srid, err := Unmarshal(data)
+		if err != nil {
+			return nil, 0, false, err
+		}
+
+		return m, srid, true, nil
+	case *geo.Point:
+		p, srid, err := ScanPoint(data)
+		if err != nil {
+			return nil, 0, false, err
+		}
+
+		*g = p
+		return p, srid, true, nil
+	case *geo.MultiPoint:
+		m, srid, err := ScanMultiPoint(data)
+		if err != nil {
+			return nil, 0, false, err
+		}
+
+		*g = m
+		return m, srid, true, nil
+	case *geo.LineString:
+		l, srid, err := ScanLineString(data)
+		if err != nil {
+			return nil, 0, false, err
+		}
+
+		*g = l
+		return l, srid, true, nil
+	case *geo.MultiLineString:
+		m, srid, err := ScanMultiLineString(data)
+		if err != nil {
+			return nil, 0, false, err
+		}
+
+		*g = m
+		return m, srid, true, nil
+	case *geo.Ring:
+		m, srid, err := Unmarshal(data)
+		if err != nil {
+			return nil, 0, false, err
+		}
+
+		if p, ok := m.(geo.Polygon); ok && len(p) == 1 {
+			*g = p[0]
+			return p[0], srid, true, nil
+		}
+
+		return nil, 0, false, ErrIncorrectGeometry
+	case *geo.Polygon:
+		p, srid, err := ScanPolygon(data)
+		if err != nil {
+			return nil, 0, false, err
+		}
+
+		*g = p
+		return p, srid, true, nil
+	case *geo.MultiPolygon:
+		m, srid, err := ScanMultiPolygon(data)
+		if err != nil {
+			return nil, 0, false, err
+		}
+
+		*g = m
+		return m, srid, true, nil
+	case *geo.Collection:
+		c, srid, err := ScanCollection(data)
+		if err != nil {
+			return nil, 0, false, err
+		}
+
+		*g = c
+		return c, srid, true, nil
+	case *geo.Bound:
+		m, srid, err := Unmarshal(data)
+		if err != nil {
+			return nil, 0, false, err
+		}
+
+		*g = m.Bound()
+		return *g, srid, true, nil
+	default:
+		return nil, 0, false, ErrIncorrectGeometry
+	}
+}
 
 // ScanPoint takes binary wkb and decodes it into a point.
 func ScanPoint(data []byte) (geo.Point, int, error) {
