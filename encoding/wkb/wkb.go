@@ -2,13 +2,27 @@ package wkb
 
 import (
 	"encoding/binary"
+	"errors"
 	"io"
 
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/encoding/wkb/wkbcommon"
 )
 
-var DefaultByteOrder binary.ByteOrder = binary.LittleEndian // the order used for marshalling or encoding
+var (
+	ErrNotWKB              = errors.New("wkb: invalid data")              // returned when unmarshalling WKB and the data is not valid
+	ErrIncorrectGeometry   = errors.New("wkb: incorrect geometry")        // returned when unmarshalling WKB data into the wrong type (e.g. linestring data into a point)
+	ErrUnsupportedDataType = errors.New("wkb: scan value must be []byte") // the error returned when scanning a non-byte slice
+	ErrUnsupportedGeometry = errors.New("wkb: unsupported geometry")      // returned when geometry type is not supported by this package
+	commonErrorMap         = map[error]error{
+		wkbcommon.ErrUnsupportedDataType: ErrUnsupportedDataType,
+		wkbcommon.ErrNotWKB:              ErrNotWKB,
+		wkbcommon.ErrNotWKBHeader:        ErrNotWKB,
+		wkbcommon.ErrIncorrectGeometry:   ErrIncorrectGeometry,
+		wkbcommon.ErrUnsupportedGeometry: ErrUnsupportedGeometry,
+	}
+	DefaultByteOrder binary.ByteOrder = binary.LittleEndian // the order used for marshalling or encoding
+)
 
 // An Encoder will encode a geometry as WKB to the writer given at
 // creation time.
