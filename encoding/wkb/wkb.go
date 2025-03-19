@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"io"
 
+	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/encoding/wkb/wkbcommon"
 )
 
@@ -20,4 +21,15 @@ func NewEncoder(w io.Writer) *Encoder {
 	e := wkbcommon.NewEncoder(w)
 	e.SetByteOrder(DefaultByteOrder)
 	return &Encoder{e: e}
+}
+
+// Encode writes the geometry encoded as WKB to the given writer.
+func (e *Encoder) Encode(geom geo.Geometry) error {
+	return e.e.Encode(geom, 0)
+}
+
+// SetByteOrder overrides the default byte order set when the encoder was created.
+func (e *Encoder) SetByteOrder(bo binary.ByteOrder) *Encoder {
+	e.e.SetByteOrder(bo)
+	return e
 }
