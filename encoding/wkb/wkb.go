@@ -1,7 +1,9 @@
 package wkb
 
 import (
+	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"io"
 
@@ -66,6 +68,34 @@ func (d *Decoder) Decode() (geo.Geometry, error) {
 		return nil, mapCommonError(err)
 	} else {
 		return g, nil
+	}
+}
+
+// Marshal encodes the geometry with the given byte order.
+func Marshal(geom geo.Geometry, byteOrder ...binary.ByteOrder) ([]byte, error) {
+	buf := bytes.NewBuffer(make([]byte, 0, wkbcommon.GeomLength(geom, false)))
+	e := NewEncoder(buf)
+	if len(byteOrder) > 0 {
+		e.SetByteOrder(byteOrder[0])
+	}
+
+	if err := e.Encode(geom); err != nil {
+		return nil, err
+	}
+
+	if buf.Len() == 0 {
+		return nil, nil
+	}
+
+	return buf.Bytes(), nil
+}
+
+// MarshalToHex encodes the geometry into a hex string representation of the binary wkb.
+func MarshalToHex(geom geo.Geometry, byteOrder ...binary.ByteOrder) (string, error) {
+	if data, err := Marshal(geom, byteOrder...); err != nil {
+		return "", err
+	} else {
+		return hex.EncodeToString(data), nil
 	}
 }
 
