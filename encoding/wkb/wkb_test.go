@@ -1,11 +1,26 @@
 package wkb
 
 import (
+	"encoding/binary"
 	"io"
 	"testing"
 
 	"github.com/pchchv/geo"
 )
+
+func TestMarshal(t *testing.T) {
+	for _, g := range geo.AllGeometries {
+		if _, err := Marshal(g, binary.BigEndian); err != nil {
+			t.Fatalf("unexpected error: %e", err)
+		}
+	}
+}
+
+func TestMustMarshal(t *testing.T) {
+	for _, g := range geo.AllGeometries {
+		MustMarshal(g, binary.BigEndian)
+	}
+}
 
 func BenchmarkEncode_Point(b *testing.B) {
 	g := geo.Point{1, 2}
