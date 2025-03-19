@@ -1047,3 +1047,193 @@ func TestValue_nil(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkScan_point(b *testing.B) {
+	p := geo.Point{1, 2}
+	data, err := Marshal(p)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	var r geo.Point
+	s := Scanner(&r)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := s.Scan(data); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkDecode_point(b *testing.B) {
+	p := geo.Point{1, 2}
+	data, err := Marshal(p)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	r := bytes.NewReader(data)
+	d := NewDecoder(r)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := d.Decode()
+		if err != nil {
+			b.Fatal(err)
+		}
+
+		r.Reset(data)
+	}
+}
+
+func BenchmarkScan_lineString(b *testing.B) {
+	var ls geo.LineString
+	for i := 0; i < 100; i++ {
+		ls = append(ls, geo.Point{float64(i), float64(i)})
+	}
+	data, err := Marshal(ls)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	var r geo.LineString
+	s := Scanner(&r)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := s.Scan(data); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkDecode_lineString(b *testing.B) {
+	var ls geo.LineString
+	for i := 0; i < 100; i++ {
+		ls = append(ls, geo.Point{float64(i), float64(i)})
+	}
+	data, err := Marshal(ls)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	r := bytes.NewReader(data)
+	d := NewDecoder(r)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := d.Decode()
+		if err != nil {
+			b.Fatal(err)
+		}
+
+		r.Reset(data)
+	}
+}
+
+func BenchmarkScan_multiLineString(b *testing.B) {
+	var mls geo.MultiLineString
+	for i := 0; i < 10; i++ {
+		var ls geo.LineString
+		for j := 0; j < 100; j++ {
+			ls = append(ls, geo.Point{float64(i), float64(i)})
+		}
+		mls = append(mls, ls)
+	}
+	data, err := Marshal(mls)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	var r geo.MultiLineString
+	s := Scanner(&r)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := s.Scan(data); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkDecode_multiLineString(b *testing.B) {
+	var mls geo.MultiLineString
+	for i := 0; i < 10; i++ {
+		var ls geo.LineString
+		for j := 0; j < 100; j++ {
+			ls = append(ls, geo.Point{float64(i), float64(i)})
+		}
+		mls = append(mls, ls)
+	}
+	data, err := Marshal(mls)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	r := bytes.NewReader(data)
+	d := NewDecoder(r)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := d.Decode()
+		if err != nil {
+			b.Fatal(err)
+		}
+
+		r.Reset(data)
+	}
+}
+
+func BenchmarkScan_polygon(b *testing.B) {
+	var p geo.Polygon
+	for i := 0; i < 1; i++ {
+		var r geo.Ring
+		for j := 0; j < 6; j++ {
+			r = append(r, geo.Point{float64(i), float64(i)})
+		}
+		p = append(p, r)
+	}
+	data, err := Marshal(p)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	var r geo.Polygon
+	s := Scanner(&r)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := s.Scan(data); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkDecode_polygon(b *testing.B) {
+	var p geo.Polygon
+	for i := 0; i < 1; i++ {
+		var r geo.Ring
+		for j := 0; j < 6; j++ {
+			r = append(r, geo.Point{float64(i), float64(i)})
+		}
+		p = append(p, r)
+	}
+	data, err := Marshal(p)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	r := bytes.NewReader(data)
+	d := NewDecoder(r)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := d.Decode()
+		if err != nil {
+			b.Fatal(err)
+		}
+
+		r.Reset(data)
+	}
+}
