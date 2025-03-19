@@ -60,6 +60,15 @@ func NewDecoder(r io.Reader) *Decoder {
 	}
 }
 
+// Decode decodes the next geometry off of the stream.
+func (d *Decoder) Decode() (geo.Geometry, error) {
+	if g, _, err := d.d.Decode(); err != nil {
+		return nil, mapCommonError(err)
+	} else {
+		return g, nil
+	}
+}
+
 func mapCommonError(err error) error {
 	if e, ok := commonErrorMap[err]; ok {
 		return e
