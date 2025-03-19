@@ -59,3 +59,10 @@ func NewDecoder(r io.Reader) *Decoder {
 		d: wkbcommon.NewDecoder(r),
 	}
 }
+
+func mapCommonError(err error) error {
+	if e, ok := commonErrorMap[err]; ok {
+		return e
+	}
+	return err
+}
