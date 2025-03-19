@@ -33,3 +33,15 @@ func (e *Encoder) SetByteOrder(bo binary.ByteOrder) *Encoder {
 	e.e.SetByteOrder(bo)
 	return e
 }
+
+// Decoder decodes WKB geometry off of the stream.
+type Decoder struct {
+	d *wkbcommon.Decoder
+}
+
+// NewDecoder will create a new WKB decoder.
+func NewDecoder(r io.Reader) *Decoder {
+	return &Decoder{
+		d: wkbcommon.NewDecoder(r),
+	}
+}
