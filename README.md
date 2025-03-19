@@ -150,3 +150,4 @@ data, err := mvt.MarshalGzipped(layers)
 - [`simplifier`](simplifier) - linear geometry simplifications like Douglas-Peucker
 - [`tilecover`](tilecover) - computes the covering set of tiles
 - [`encoding/mvt`](encoding/mvt) - encoded and decoding from [Mapbox Vector Tiles](https://www.mapbox.com/vector-tiles/)
+- [`encoding/wkb`](encoding/wkb) - well-known binary as well as helpers to decode from the database queries
