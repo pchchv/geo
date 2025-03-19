@@ -70,3 +70,7 @@ func Value(g geo.Geometry) driver.Valuer {
 	return value{v: g}
 
 }
+
+func (v value) Value() (driver.Value, error) {
+	return Marshal(v.v)
+}
