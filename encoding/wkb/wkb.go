@@ -117,6 +117,15 @@ func MustMarshalToHex(geom geo.Geometry, byteOrder ...binary.ByteOrder) string {
 	}
 }
 
+// Unmarshal decodes the type into a Geometry.
+func Unmarshal(data []byte) (geo.Geometry, error) {
+	if g, _, err := wkbcommon.Unmarshal(data); err != nil {
+		return nil, mapCommonError(err)
+	} else {
+		return g, nil
+	}
+}
+
 func mapCommonError(err error) error {
 	if e, ok := commonErrorMap[err]; ok {
 		return e
