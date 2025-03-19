@@ -2,12 +2,16 @@ package wkb
 
 import (
 	"database/sql"
+	"database/sql/driver"
 
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/encoding/wkb/wkbcommon"
 )
 
-var _ sql.Scanner = &GeometryScanner{}
+var (
+	_ sql.Scanner  = &GeometryScanner{}
+	_ driver.Value = value{}
+)
 
 // GeometryScanner scans the results of sql queries,
 // it can be used as a scan destination:
@@ -55,4 +59,14 @@ func (s *GeometryScanner) Scan(d interface{}) error {
 	}
 
 	return nil
+}
+
+type value struct {
+	v geo.Geometry
+}
+
+// Value creates a driver.Valuer that will WKB the geometry into the database query.
+func Value(g geo.Geometry) driver.Valuer {
+	return value{v: g}
+
 }
