@@ -99,6 +99,24 @@ func MarshalToHex(geom geo.Geometry, byteOrder ...binary.ByteOrder) (string, err
 	}
 }
 
+// MustMarshal encodes the geometry and panic on error.
+func MustMarshal(geom geo.Geometry, byteOrder ...binary.ByteOrder) []byte {
+	if d, err := Marshal(geom, byteOrder...); err != nil {
+		panic(err)
+	} else {
+		return d
+	}
+}
+
+// MustMarshalToHex encodes the geometry and panic on error.
+func MustMarshalToHex(geom geo.Geometry, byteOrder ...binary.ByteOrder) string {
+	if d, err := MarshalToHex(geom, byteOrder...); err != nil {
+		panic(err)
+	} else {
+		return d
+	}
+}
+
 func mapCommonError(err error) error {
 	if e, ok := commonErrorMap[err]; ok {
 		return e
