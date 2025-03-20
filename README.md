@@ -137,9 +137,31 @@ data, err := mvt.Marshal(layers) // this data is NOT gzipped.
 data, err := mvt.MarshalGzipped(layers)
 ```
 
+## Decoding WKB/EWKB from a database query
+
+Geometries are usually returned from databases in WKB or EWKB format. The [encoding/ewkb](encoding/ewkb) sub-package offers helpers to "scan" the data into the base types directly.
+For example:
+
+```go
+db.Exec(
+  "INSERT INTO postgis_table (point_column) VALUES (ST_GeomFromEWKB(?))",
+  ewkb.Value(geo.Point{1, 2}, 4326),
+)
+
+row := db.QueryRow("SELECT ST_AsBinary(point_column) FROM postgis_table")
+
+var p geo.Point
+err := row.Scan(ewkb.Scanner(&p))
+```
+
+For more information see the readme in the [encoding/ewkb](encoding/ewkb) package.
+
 ## List of subpackage utilities
 
 - [`clip`](clip) - clipping geometry to a bounding box
+- [`encoding/mvt`](encoding/mvt) - encoded and decoding from [Mapbox Vector Tiles](https://www.mapbox.com/vector-tiles/)
+- [`encoding/ewkb`](encoding/ewkb) - extended well-known binary format that includes the SRID
+- [`encoding/wkb`](encoding/wkb) - well-known binary as well as helpers to decode from the database queries
 - [`geojson`](geojson) - working with geojson and the types in this package
 - [`geometries`](geometries) - defines common 2d geometries
 - [`maptile`](maptile) - working with mercator map tiles and quadkeys
@@ -149,5 +171,3 @@ data, err := mvt.MarshalGzipped(layers)
 - [`resample`](resample) - resample points in a line string geometry
 - [`simplifier`](simplifier) - linear geometry simplifications like Douglas-Peucker
 - [`tilecover`](tilecover) - computes the covering set of tiles
-- [`encoding/mvt`](encoding/mvt) - encoded and decoding from [Mapbox Vector Tiles](https://www.mapbox.com/vector-tiles/)
-- [`encoding/wkb`](encoding/wkb) - well-known binary as well as helpers to decode from the database queries
