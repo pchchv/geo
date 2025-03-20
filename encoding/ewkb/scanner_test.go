@@ -1,6 +1,7 @@
 package ewkb
 
 import (
+	"bytes"
 	"reflect"
 	"testing"
 
@@ -992,6 +993,125 @@ func TestScanBound_errors(t *testing.T) {
 
 			if s.Valid {
 				t.Errorf("valid should be false on errors")
+			}
+		})
+	}
+}
+
+func TestValue(t *testing.T) {
+	t.Run("marshalls geometry", func(t *testing.T) {
+		testPoint := geo.Point{1, 2}
+		testPointData := MustMarshal(testPoint, 4326)
+		val, err := Value(testPoint, 4326).Value()
+		if err != nil {
+			t.Errorf("value error: %e", err)
+		}
+
+		if !bytes.Equal(val.([]byte), testPointData) {
+			t.Errorf("incorrect marshal")
+			t.Log(val)
+			t.Log(testPointData)
+		}
+	})
+
+	t.Run("nil value in should set nil value", func(t *testing.T) {
+		val, err := Value(nil, 4326).Value()
+		if err != nil {
+			t.Errorf("value error: %e", err)
+		}
+
+		if val != nil {
+			t.Errorf("should be nil value: %[1]T, %[1]v", val)
+		}
+	})
+}
+
+func TestValue_nil(t *testing.T) {
+	var (
+		mp    geo.MultiPoint
+		ls    geo.LineString
+		mls   geo.MultiLineString
+		r     geo.Ring
+		poly  geo.Polygon
+		mpoly geo.MultiPolygon
+		c     geo.Collection
+	)
+
+	cases := []struct {
+		name string
+		geom geo.Geometry
+	}{
+		{
+			name: "nil multi point",
+			geom: mp,
+		},
+		{
+			name: "nil line string",
+			geom: ls,
+		},
+		{
+			name: "nil multi line string",
+			geom: mls,
+		},
+		{
+			name: "nil ring",
+			geom: r,
+		},
+		{
+			name: "nil polygon",
+			geom: poly,
+		},
+		{
+			name: "nil multi polygon",
+			geom: mpoly,
+		},
+		{
+			name: "nil collection",
+			geom: c,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			val, err := Value(tc.geom, 4326).Value()
+			if err != nil {
+				t.Errorf("value error: %e", err)
+			}
+
+			if val != nil {
+				t.Errorf("should be nil value: %[1]T, %[1]v", val)
+			}
+		})
+	}
+}
+
+func TestValuePrefixSRID(t *testing.T) {
+	cases := []struct {
+		name     string
+		geom     geo.Geometry
+		srid     int
+		expected []byte
+	}{
+		{
+			name:     "point",
+			geom:     geo.Point{4, 5},
+			srid:     4326,
+			expected: append([]byte{230, 16, 0, 0}, MustMarshal(geo.Point{4, 5}, 0)...),
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			v := ValuePrefixSRID(tc.geom, tc.srid)
+			data, err := v.Value()
+			if err != nil {
+				t.Fatalf("value error: %e", err)
+			}
+
+			if !bytes.Equal(data.([]byte), tc.expected) {
+				t.Errorf("unequal data")
+				t.Log(data)
+				t.Log(tc.expected)
 			}
 		})
 	}
