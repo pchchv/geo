@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"io"
 
 	"github.com/pchchv/geo"
@@ -11,14 +12,24 @@ import (
 )
 
 var (
-	// DefaultByteOrder is the order used for marshalling or encoding is none is specified.
-	DefaultByteOrder binary.ByteOrder = binary.LittleEndian
 	// DefaultSRID is a common SRID representing spatial data using
 	// longitude and latitude coordinates on the
 	// Earth's surface as defined in the WGS84 standard,
 	// which is also used for the Global Positioning System (GPS).
 	// This value will be used by the encoder if it is not specified.
-	DefaultSRID int = 4326
+	DefaultSRID            int              = 4326
+	DefaultByteOrder       binary.ByteOrder = binary.LittleEndian                          // default order used for marshalling or encoding is none is specified.
+	ErrUnsupportedDataType                  = errors.New("wkb: scan value must be []byte") // returned when scanning a value that is not []byte.
+	ErrNotEWKB                              = errors.New("wkb: invalid data")              // returned when unmarshalling EWKB and the data is not valid.
+	ErrIncorrectGeometry                    = errors.New("wkb: incorrect geometry")        // returned when unmarshalling EWKB data into the wrong type.
+	ErrUnsupportedGeometry                  = errors.New("wkb: unsupported geometry")      // returned when geometry type is not supported by this lib.
+	commonErrorMap                          = map[error]error{
+		wkbcommon.ErrUnsupportedDataType: ErrUnsupportedDataType,
+		wkbcommon.ErrNotWKB:              ErrNotEWKB,
+		wkbcommon.ErrNotWKBHeader:        ErrNotEWKB,
+		wkbcommon.ErrIncorrectGeometry:   ErrIncorrectGeometry,
+		wkbcommon.ErrUnsupportedGeometry: ErrUnsupportedGeometry,
+	}
 )
 
 // Encoder encodes a geometry as EWKB to the writer given at creation time.
