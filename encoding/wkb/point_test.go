@@ -1,6 +1,11 @@
 package wkb
 
-import "github.com/pchchv/geo"
+import (
+	"testing"
+
+	"github.com/pchchv/geo"
+	"github.com/pchchv/geo/encoding/wkb/wkbcommon"
+)
 
 var (
 	testPoint     = geo.Point{-117.15906619141342, 32.71628524142945}
@@ -41,3 +46,101 @@ var (
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x44, 0x40, // Y1 40
 	}
 )
+
+func TestPoint(t *testing.T) {
+	cases := []struct {
+		name     string
+		data     []byte
+		expected geo.Point
+	}{
+		{
+			name:     "point",
+			data:     testPointData,
+			expected: testPoint,
+		},
+		{
+			name:     "little endian",
+			data:     []byte{1, 1, 0, 0, 0, 15, 152, 60, 227, 24, 157, 94, 192, 205, 11, 17, 39, 128, 222, 66, 64},
+			expected: geo.Point{-122.4546440212, 37.7382859071},
+		},
+		{
+			name:     "big endian",
+			data:     []byte{0, 0, 0, 0, 1, 192, 94, 157, 24, 227, 60, 152, 15, 64, 66, 222, 128, 39, 17, 11, 205},
+			expected: geo.Point{-122.4546440212, 37.7382859071},
+		},
+		{
+			name:     "another point",
+			data:     []byte{1, 1, 0, 0, 0, 253, 104, 56, 101, 110, 114, 87, 192, 192, 9, 133, 8, 56, 50, 64, 64},
+			expected: geo.Point{-93.787988, 32.392335},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			compare(t, tc.expected, tc.data)
+		})
+	}
+}
+
+func TestPointToHex(t *testing.T) {
+	cases := []struct {
+		name     string
+		data     geo.Point
+		expected string
+	}{
+		{
+			name:     "point",
+			data:     geo.Point{1, 2},
+			expected: "0101000000000000000000f03f0000000000000040",
+		},
+		{
+			name:     "zero point",
+			data:     geo.Point{0, 0},
+			expected: "010100000000000000000000000000000000000000",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := MustMarshalToHex(tc.data)
+			if s != tc.expected {
+				t.Errorf("incorrect hex: %v", s)
+			}
+		})
+	}
+}
+
+func TestMultiPoint(t *testing.T) {
+	large := geo.MultiPoint{}
+	for i := 0; i < wkbcommon.MaxPointsAlloc+100; i++ {
+		large = append(large, geo.Point{float64(i), float64(-i)})
+	}
+
+	cases := []struct {
+		name     string
+		data     []byte
+		expected geo.MultiPoint
+	}{
+		{
+			name:     "multi point",
+			data:     testMultiPointData,
+			expected: testMultiPoint,
+		},
+		{
+			name:     "single multi point",
+			data:     testMultiPointSingleData,
+			expected: testMultiPointSingle,
+		},
+		{
+			name:     "large multi point",
+			data:     MustMarshal(large),
+			expected: large,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			compare(t, tc.expected, tc.data)
+		})
+	}
+}
