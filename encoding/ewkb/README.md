@@ -19,3 +19,33 @@ func Unmarshal(b []byte) (geo.Geometry, int, error)
 func NewDecoder(r io.Reader) *Decoder
 func (d *Decoder) Decode() (geo.Geometry, int, error)
 ```
+
+## Inserting geometry into a database
+
+Depending on the database different formats and functions are supported:
+
+### PostgreSQL and PostGIS
+
+PostGIS stores geometry as EWKB internally.
+As a result it can be inserted without a wrapper function.
+
+```go
+db.Exec("INSERT INTO geodata(geom) VALUES (ST_GeomFromEWKB($1))", ewkb.Value(coord, 4326))
+
+db.Exec("INSERT INTO geodata(geom) VALUES ($1)", ewkb.Value(coord, 4326))
+```
+
+### MySQL/MariaDB
+
+MySQL and MariaDB [store geometry](https://dev.mysql.com/doc/refman/5.7/en/gis-data-formats.html) data in WKB format with a 4 byte SRID prefix.
+
+```go
+coord := geo.Point{1, 2}
+
+// as WKB in hex format
+data := wkb.MustMarshalToHex(coord)
+db.Exec("INSERT INTO geodata(geom) VALUES (ST_GeomFromWKB(UNHEX(?), 4326))", data)
+
+// relying on the raw encoding
+db.Exec("INSERT INTO geodata(geom) VALUES (?)", ewkb.ValuePrefixSRID(coord, 4326))
+```
