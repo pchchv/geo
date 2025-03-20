@@ -1,7 +1,9 @@
 package ewkb
 
 import (
+	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"io"
 
 	"github.com/pchchv/geo"
@@ -52,4 +54,36 @@ func (e *Encoder) Encode(geom geo.Geometry, srid ...int) error {
 	}
 
 	return e.e.Encode(geom, s)
+}
+
+// Marshal encodes the geometry with the given byte order.
+// An SRID of 0 will not be included in the encoding and the
+// result will be a wkb encoding of the geometry.
+func Marshal(geom geo.Geometry, srid int, byteOrder ...binary.ByteOrder) ([]byte, error) {
+	buf := bytes.NewBuffer(make([]byte, 0, wkbcommon.GeomLength(geom, srid != 0)))
+	e := NewEncoder(buf)
+	e.SetSRID(srid)
+	if len(byteOrder) > 0 {
+		e.SetByteOrder(byteOrder[0])
+	}
+
+	if err := e.Encode(geom); err != nil {
+		return nil, err
+	}
+
+	if buf.Len() == 0 {
+		return nil, nil
+	}
+
+	return buf.Bytes(), nil
+}
+
+// MarshalToHex encodes the geometry into a hex string representation of the binary ewkb.
+func MarshalToHex(geom geo.Geometry, srid int, byteOrder ...binary.ByteOrder) (string, error) {
+	data, err := Marshal(geom, srid, byteOrder...)
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(data), nil
 }
