@@ -55,6 +55,8 @@ type GeometryScanner struct {
 // Deprecated behavior: Scanning directly from MySQL columns is supported.
 // By default MySQL returns geometry data as WKB but prefixed with a 4 byte SRID.
 // To support this, if the data is not valid WKB, the code will strip the first 4 bytes and try again.
+//
+// For supported behavior see `ewkb.ScannerPrefixSRID`
 func Scanner(g interface{}) *GeometryScanner {
 	return &GeometryScanner{g: g}
 }
