@@ -1,6 +1,11 @@
 package wkb
 
-import "github.com/pchchv/geo"
+import (
+	"testing"
+
+	"github.com/pchchv/geo"
+	"github.com/pchchv/geo/encoding/wkb/wkbcommon"
+)
 
 var (
 	testCollection = geo.Collection{
@@ -24,3 +29,33 @@ var (
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x24, 0x40, // Y2 10
 	}
 )
+
+func TestCollection(t *testing.T) {
+	large := geo.Collection{}
+	for i := 0; i < wkbcommon.MaxMultiAlloc+100; i++ {
+		large = append(large, geo.Point{float64(i), float64(-i)})
+	}
+
+	cases := []struct {
+		name     string
+		data     []byte
+		expected geo.Collection
+	}{
+		{
+			name:     "collection",
+			data:     testCollectionData,
+			expected: testCollection,
+		},
+		{
+			name:     "large",
+			data:     MustMarshal(large),
+			expected: large,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			compare(t, tc.expected, tc.data)
+		})
+	}
+}
