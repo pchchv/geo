@@ -79,6 +79,15 @@ func NewDecoder(r io.Reader) *Decoder {
 	}
 }
 
+// Decode decodes the next geometry off of the stream.
+func (d *Decoder) Decode() (geo.Geometry, int, error) {
+	if g, srid, err := d.d.Decode(); err != nil {
+		return nil, 0, mapCommonError(err)
+	} else {
+		return g, srid, nil
+	}
+}
+
 // Marshal encodes the geometry with the given byte order.
 // An SRID of 0 will not be included in the encoding and the
 // result will be a wkb encoding of the geometry.
