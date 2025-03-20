@@ -87,3 +87,21 @@ func MarshalToHex(geom geo.Geometry, srid int, byteOrder ...binary.ByteOrder) (s
 
 	return hex.EncodeToString(data), nil
 }
+
+// MustMarshal encodes the geometry and panic on error.
+func MustMarshal(geom geo.Geometry, srid int, byteOrder ...binary.ByteOrder) []byte {
+	if d, err := Marshal(geom, srid, byteOrder...); err != nil {
+		panic(err)
+	} else {
+		return d
+	}
+}
+
+// MustMarshalToHex encodes the geometry and panic on error.
+func MustMarshalToHex(geom geo.Geometry, srid int, byteOrder ...binary.ByteOrder) string {
+	if d, err := MarshalToHex(geom, srid, byteOrder...); err != nil {
+		panic(err)
+	} else {
+		return d
+	}
+}
