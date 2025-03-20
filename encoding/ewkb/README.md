@@ -49,3 +49,55 @@ db.Exec("INSERT INTO geodata(geom) VALUES (ST_GeomFromWKB(UNHEX(?), 4326))", dat
 // relying on the raw encoding
 db.Exec("INSERT INTO geodata(geom) VALUES (?)", ewkb.ValuePrefixSRID(coord, 4326))
 ```
+
+## Reading geometry from a database query
+
+As stated above, different databases supported different formats and functions.
+
+### PostgreSQL and PostGIS
+
+When working with PostGIS the raw format is EWKB so the wrapper function is not necessary.
+
+```go
+// both of these queries return the same data
+row := db.QueryRow("SELECT ST_AsEWKB(geom) FROM geodata")
+row := db.QueryRow("SELECT geom FROM geodata")
+
+// if you don't need the SRID
+p := geo.Point{}
+err := row.Scan(ewkb.Scanner(&p))
+log.Printf("geom: %v", p)
+
+// if you need the SRID
+p := geo.Point{}
+gs := ewkb.Scanner(&p)
+err := row.Scan(gs)
+
+log.Printf("srid: %v", gs.SRID)
+log.Printf("geom: %v", gs.Geometry)
+log.Printf("also geom: %v", p)
+```
+
+### MySQL/MariaDB
+
+```go
+// using the ST_AsBinary function
+row := db.QueryRow("SELECT st_srid(geom), ST_AsBinary(geom) FROM geodata")
+row.Scan(&srid, ewkb.Scanner(&data))
+
+// relying on the raw encoding
+row := db.QueryRow("SELECT geom FROM geodata")
+
+// if you don't need the SRID
+p := geo.Point{}
+err := row.Scan(ewkb.ScannerPrefixSRID(&p))
+log.Printf("geom: %v", p)
+
+// if you need the SRID
+p := geo.Point{}
+gs := ewkb.ScannerPrefixSRID(&p)
+err := row.Scan(gs)
+
+log.Printf("srid: %v", gs.SRID)
+log.Printf("geom: %v", gs.Geometry)
+```
