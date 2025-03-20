@@ -1,6 +1,11 @@
 package wkb
 
-import "github.com/pchchv/geo"
+import (
+	"testing"
+
+	"github.com/pchchv/geo"
+	"github.com/pchchv/geo/encoding/wkb/wkbcommon"
+)
 
 var (
 	testLineString     = geo.LineString{{1, 2}, {3, 4}}
@@ -54,3 +59,68 @@ var (
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x44, 0x40, // Y3 40
 	}
 )
+
+func TestLineString(t *testing.T) {
+	large := geo.LineString{}
+	for i := 0; i < wkbcommon.MaxPointsAlloc+100; i++ {
+		large = append(large, geo.Point{float64(i), float64(-i)})
+	}
+
+	cases := []struct {
+		name     string
+		data     []byte
+		expected geo.LineString
+	}{
+		{
+			name:     "line string",
+			data:     testLineStringData,
+			expected: testLineString,
+		},
+		{
+			name:     "large line string",
+			data:     MustMarshal(large),
+			expected: large,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			compare(t, tc.expected, tc.data)
+		})
+	}
+}
+
+func TestMultiLineString(t *testing.T) {
+	large := geo.MultiLineString{}
+	for i := 0; i < wkbcommon.MaxMultiAlloc+100; i++ {
+		large = append(large, geo.LineString{})
+	}
+
+	cases := []struct {
+		name     string
+		data     []byte
+		expected geo.MultiLineString
+	}{
+		{
+			name:     "multi line string",
+			data:     testMultiLineStringData,
+			expected: testMultiLineString,
+		},
+		{
+			name:     "single multi line string",
+			data:     testMultiLineStringSingleData,
+			expected: testMultiLineStringSingle,
+		},
+		{
+			name:     "large",
+			data:     MustMarshal(large),
+			expected: large,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			compare(t, tc.expected, tc.data)
+		})
+	}
+}
