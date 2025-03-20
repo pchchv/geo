@@ -56,6 +56,18 @@ func (e *Encoder) Encode(geom geo.Geometry, srid ...int) error {
 	return e.e.Encode(geom, s)
 }
 
+// Decoder decodes WKB geometry off of the stream.
+type Decoder struct {
+	d *wkbcommon.Decoder
+}
+
+// NewDecoder creates a new EWKB decoder.
+func NewDecoder(r io.Reader) *Decoder {
+	return &Decoder{
+		d: wkbcommon.NewDecoder(r),
+	}
+}
+
 // Marshal encodes the geometry with the given byte order.
 // An SRID of 0 will not be included in the encoding and the
 // result will be a wkb encoding of the geometry.
