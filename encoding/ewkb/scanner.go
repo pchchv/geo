@@ -2,13 +2,17 @@ package ewkb
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"encoding/binary"
 
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/encoding/wkb/wkbcommon"
 )
 
-var _ sql.Scanner = &GeometryScanner{}
+var (
+	_ sql.Scanner  = &GeometryScanner{}
+	_ driver.Value = value{}
+)
 
 // GeometryScanner scans the results of sql queries.
 // It can be used as a scan destination:
@@ -108,4 +112,23 @@ func (s *GeometryScanner) Scan(d interface{}) error {
 	s.Valid = valid
 
 	return nil
+}
+
+type value struct {
+	srid int
+	v    geo.Geometry
+}
+
+// Value creates a driver.Valuer that will EWKB the geometry into the database query.
+// db.Exec("INSERT INTO table (point_column) VALUES (?)", ewkb.Value(p, 4326))
+func Value(g geo.Geometry, srid int) driver.Valuer {
+	return value{srid: srid, v: g}
+}
+
+func (v value) Value() (driver.Value, error) {
+	if val, err := Marshal(v.v, v.srid); val == nil {
+		return nil, err
+	} else {
+		return val, err
+	}
 }
