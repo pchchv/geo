@@ -162,6 +162,7 @@ For more information see the readme in the [encoding/ewkb](encoding/ewkb) packag
 - [`encoding/mvt`](encoding/mvt) - encoded and decoding from [Mapbox Vector Tiles](https://www.mapbox.com/vector-tiles/)
 - [`encoding/ewkb`](encoding/ewkb) - extended well-known binary format that includes the SRID
 - [`encoding/wkb`](encoding/wkb) - well-known binary as well as helpers to decode from the database queries
+- [`encoding/wkt`](encoding/wkt) - well-known text encoding
 - [`geojson`](geojson) - working with geojson and the types in this package
 - [`geometries`](geometries) - defines common 2d geometries
 - [`maptile`](maptile) - working with mercator map tiles and quadkeys
