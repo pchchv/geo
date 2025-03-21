@@ -86,6 +86,38 @@ func unmarshalPoint(s string) (geo.Point, error) {
 	return tp, nil
 }
 
+func unmarshalMultiPoint(s string) (geo.MultiPoint, error) {
+	if strings.EqualFold(s, "MULTIPOINT EMPTY") {
+		return geo.MultiPoint{}, nil
+	}
+
+	s, err := trimSpaceBrackets(s[10:])
+	if err != nil {
+		return nil, err
+	}
+
+	count := strings.Count(s, ",")
+	mp := make(geo.MultiPoint, 0, count+1)
+	if err = splitOnComma(s, func(p string) error {
+		p, err := trimSpaceBrackets(p)
+		if err != nil {
+			return err
+		}
+
+		tp, err := parsePoint(p)
+		if err != nil {
+			return err
+		}
+
+		mp = append(mp, tp)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return mp, nil
+}
+
 // parsePoint pases point by (x y).
 func parsePoint(s string) (p geo.Point, err error) {
 	one, two, ok := strings.Cut(s, " ")
@@ -104,4 +136,53 @@ func parsePoint(s string) (p geo.Point, err error) {
 	}
 
 	return geo.Point{x, y}, nil
+}
+
+// splitOnComma is optimized to split on the regex [\s|\t|\n]*,[\s|\t|\n]*
+// i.e. comma with possible spaces on each side. e.g. '  ,  '
+// We use a yield function because it
+// was faster/used less memory than allocating an array of the results.
+// In WKT points are separtated by commas,
+// coordinates in points are separted by spaces e.g. 1 2,3 4,5 6,7 81 2,5 4
+// is needed to split this and find each point.
+func splitOnComma(s string, yield func(s string) error) error {
+	// at is right after the previous space-comma-space match.
+	// once a space-comma-space match is found,
+	// go from 'at' to the start of the match,
+	// that's the split that needs to be returned.
+	// start of a space-comma-space section
+	var at, start int
+	// a space starts a section,
+	// is needed to see a comma for it to be a valid section
+	var sawSpace, sawComma bool
+	for i := 0; i < len(s); i++ {
+		if s[i] == ',' {
+			if !sawSpace {
+				sawSpace = true
+				start = i
+			}
+
+			sawComma = true
+			continue
+		}
+
+		if v := s[i]; v == ' ' || v == '\t' || v == '\n' {
+			if !sawSpace {
+				sawSpace = true
+				start = i
+			}
+			continue
+		}
+
+		if sawComma {
+			if err := yield(s[at:start]); err != nil {
+				return err
+			}
+			at = i
+		}
+
+		sawSpace, sawComma = false, false
+	}
+
+	return yield(s[at:])
 }
