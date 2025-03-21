@@ -3,7 +3,10 @@ package wkt
 import (
 	"encoding/json"
 	"reflect"
+	"strings"
 	"testing"
+
+	"github.com/pchchv/geo"
 )
 
 func TestUnmarshalPoint_errors(t *testing.T) {
@@ -128,6 +131,579 @@ func TestUnmarshalMultiLineString_errors(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			if _, err := UnmarshalMultiLineString(tc.s); err != tc.err {
+				t.Fatalf("incorrect error: %e != %e", err, tc.err)
+			}
+		})
+	}
+}
+
+func TestUnmarshalPoint(t *testing.T) {
+	cases := []struct {
+		name     string
+		s        string
+		expected geo.Point
+	}{
+		{
+			name:     "int",
+			s:        "POINT(1 2)",
+			expected: geo.Point{1, 2},
+		},
+		{
+			name:     "float64",
+			s:        "POINT(1.34 2.35)",
+			expected: geo.Point{1.34, 2.35},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			// you know it's a point
+			p, err := UnmarshalPoint(tc.s)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !p.Equal(tc.expected) {
+				t.Log(p)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+
+			// lower case
+			p, err = UnmarshalPoint("  " + strings.ToLower(tc.s))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !p.Equal(tc.expected) {
+				t.Log(p)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+
+			// via generic unmarshal
+			geom, err := Unmarshal(tc.s)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			p = geom.(geo.Point)
+
+			if !p.Equal(tc.expected) {
+				t.Log(p)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+		})
+	}
+}
+
+func TestUnmarshalMultiPoint(t *testing.T) {
+	cases := []struct {
+		name     string
+		s        string
+		expected geo.MultiPoint
+	}{
+		{
+			name:     "empty",
+			s:        "MULTIPOINT EMPTY",
+			expected: geo.MultiPoint{},
+		},
+		{
+			name:     "1 point",
+			s:        "MULTIPOINT((1 2))",
+			expected: geo.MultiPoint{{1, 2}},
+		},
+		{
+			name:     "2 points",
+			s:        "MULTIPOINT((1 2),(0.5 1.5))",
+			expected: geo.MultiPoint{{1, 2}, {0.5, 1.5}},
+		},
+		{
+			name:     "spaces",
+			s:        "MULTIPOINT((1 2)  ,	(0.5 1.5))",
+			expected: geo.MultiPoint{{1, 2}, {0.5, 1.5}},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			// you know it's multipoint
+			mp, err := UnmarshalMultiPoint(tc.s)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !mp.Equal(tc.expected) {
+				t.Log(mp)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+
+			// lower case
+			mp, err = UnmarshalMultiPoint("  " + strings.ToLower(tc.s))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !mp.Equal(tc.expected) {
+				t.Log(mp)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+
+			// via generic unmarshall
+			geom, err := Unmarshal(tc.s)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			mp = geom.(geo.MultiPoint)
+
+			if !mp.Equal(tc.expected) {
+				t.Log(mp)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+		})
+	}
+}
+
+func TestUnmarshalLineString(t *testing.T) {
+	cases := []struct {
+		name     string
+		s        string
+		expected geo.LineString
+	}{
+		{
+			name:     "empty",
+			s:        "LINESTRING EMPTY",
+			expected: geo.LineString{},
+		},
+		{
+			name:     "2 points",
+			s:        "LINESTRING(1 2,0.5 1.5)",
+			expected: geo.LineString{{1, 2}, {0.5, 1.5}},
+		},
+		{
+			name:     "spaces",
+			s:        "LINESTRING(1 2 , 0.5 1.5)",
+			expected: geo.LineString{{1, 2}, {0.5, 1.5}},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			// you know it's a linestring
+			ls, err := UnmarshalLineString(tc.s)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !ls.Equal(tc.expected) {
+				t.Log(ls)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+
+			// lower case
+			ls, err = UnmarshalLineString("  " + strings.ToLower(tc.s))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !ls.Equal(tc.expected) {
+				t.Log(ls)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+
+			// via generic unmarshal
+			geom, err := Unmarshal(tc.s)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ls = geom.(geo.LineString)
+
+			if !ls.Equal(tc.expected) {
+				t.Log(ls)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+		})
+	}
+}
+
+func TestUnmarshalMultiLineString(t *testing.T) {
+	cases := []struct {
+		name     string
+		s        string
+		expected geo.MultiLineString
+	}{
+		{
+			name:     "empty",
+			s:        "MULTILINESTRING EMPTY",
+			expected: geo.MultiLineString{},
+		},
+		{
+			name:     "2 lines",
+			s:        "MULTILINESTRING((1 2,3 4),(5 6,7 8))",
+			expected: geo.MultiLineString{{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			// you know it's a linestring
+			mls, err := UnmarshalMultiLineString(tc.s)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !mls.Equal(tc.expected) {
+				t.Log(mls)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+
+			// lower case
+			mls, err = UnmarshalMultiLineString("  " + strings.ToLower(tc.s))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !mls.Equal(tc.expected) {
+				t.Log(mls)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+
+			// via generic unmarshal
+			geom, err := Unmarshal(tc.s)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			mls = geom.(geo.MultiLineString)
+
+			if !mls.Equal(tc.expected) {
+				t.Log(mls)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+		})
+	}
+}
+
+func TestUnmarshalPolygon(t *testing.T) {
+	cases := []struct {
+		name     string
+		s        string
+		expected geo.Polygon
+	}{
+		{
+			name:     "empty",
+			s:        "POLYGON EMPTY",
+			expected: geo.Polygon{},
+		},
+		{
+			name:     "one ring",
+			s:        "POLYGON((0 0,1 0,1 1,0 0))",
+			expected: geo.Polygon{{{0, 0}, {1, 0}, {1, 1}, {0, 0}}},
+		},
+		{
+			name:     "two rings",
+			s:        "POLYGON((1 2,3 4),(5 6,7 8))",
+			expected: geo.Polygon{{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}},
+		},
+		{
+			name:     "two rings with spaces",
+			s:        "POLYGON((1 2,3 4)   ,   (5 6  ,  7 8))",
+			expected: geo.Polygon{{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			// you know it's a polygon
+			p, err := UnmarshalPolygon(tc.s)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !p.Equal(tc.expected) {
+				t.Log(p)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+
+			// lower case
+			p, err = UnmarshalPolygon(strings.ToLower(tc.s))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !p.Equal(tc.expected) {
+				t.Log(p)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+
+			// via generic unmarshal
+			geom, err := Unmarshal(tc.s)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			p = geom.(geo.Polygon)
+
+			if !p.Equal(tc.expected) {
+				t.Log(p)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+		})
+	}
+}
+
+func TestUnmarshalPolygon_errors(t *testing.T) {
+	cases := []struct {
+		name string
+		s    string
+		err  error
+	}{
+		{
+			name: "just name",
+			s:    "POLYGON",
+			err:  ErrNotWKT,
+		},
+		{
+			name: "too many points",
+			s:    "POLYGON((1 2,3 4 5))",
+			err:  ErrNotWKT,
+		},
+		{
+			name: "not a polygon",
+			s:    "POINT(1 2)",
+			err:  ErrIncorrectGeometry,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := UnmarshalPolygon(tc.s); err != tc.err {
+				t.Fatalf("incorrect error: %e != %e", err, tc.err)
+			}
+		})
+	}
+}
+
+func TestUnmarshalMutilPolygon(t *testing.T) {
+	cases := []struct {
+		name     string
+		s        string
+		expected geo.MultiPolygon
+	}{
+		{
+			name:     "empty",
+			s:        "MULTIPOLYGON EMPTY",
+			expected: geo.MultiPolygon{},
+		},
+		{
+			name:     "multi-polygon",
+			s:        "MULTIPOLYGON(((1 2,3 4)),((5 6,7 8),(1 2,5 4)))",
+			expected: geo.MultiPolygon{{{{1, 2}, {3, 4}}}, {{{5, 6}, {7, 8}}, {{1, 2}, {5, 4}}}},
+		},
+		{
+			name:     "multi-polygon with spaces",
+			s:        "MULTIPOLYGON(((1 2,3 4))  , 		((5 6,7 8),  (1 2,5 4)))",
+			expected: geo.MultiPolygon{{{{1, 2}, {3, 4}}}, {{{5, 6}, {7, 8}}, {{1, 2}, {5, 4}}}},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			// you know it's a multipolygon
+			mp, err := UnmarshalMultiPolygon(tc.s)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !mp.Equal(tc.expected) {
+				t.Log(mp)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+
+			// lower case
+			mp, err = UnmarshalMultiPolygon("   " + strings.ToLower(tc.s))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !mp.Equal(tc.expected) {
+				t.Log(mp)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+
+			// via generic unmarshal
+			geom, err := Unmarshal(tc.s)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			mp = geom.(geo.MultiPolygon)
+
+			if !mp.Equal(tc.expected) {
+				t.Log(mp)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+		})
+	}
+}
+
+func TestUnmarshalMultiPolygon_errors(t *testing.T) {
+	cases := []struct {
+		name string
+		s    string
+		err  error
+	}{
+		{
+			name: "just name",
+			s:    "MULTIPOLYGON",
+			err:  ErrNotWKT,
+		},
+		{
+			name: "too many points",
+			s:    "MULTIPOLYGON(((1 2,3 4 5)))",
+			err:  ErrNotWKT,
+		},
+		{
+			name: "missing trailing )",
+			s:    "MULTIPOLYGON(((0 1,3 0,4 3,0 4,0 1)), ((3 4,6 3,5 5,3 4)), ((0 0,-1 -2,-3 -2,-2 -1,0 0))",
+			err:  ErrNotWKT,
+		},
+		{
+			name: "not a multi polygon",
+			s:    "POINT(1 2)",
+			err:  ErrIncorrectGeometry,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := UnmarshalMultiPolygon(tc.s); err != tc.err {
+				t.Fatalf("incorrect error: %e != %e", err, tc.err)
+			}
+		})
+	}
+}
+
+func TestUnmarshalCollection(t *testing.T) {
+	cases := []struct {
+		name     string
+		s        string
+		expected geo.Collection
+	}{
+		{
+			name:     "empty",
+			s:        "GEOMETRYCOLLECTION EMPTY",
+			expected: geo.Collection{},
+		},
+		{
+			name:     "point and line",
+			s:        "GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(3 4,5 6))",
+			expected: geo.Collection{geo.Point{1, 2}, geo.LineString{{3, 4}, {5, 6}}},
+		},
+		{
+			name: "lots of things",
+			s:    "GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(3 4,5 6),MULTILINESTRING((1 2,3 4),(5 6,7 8)),POLYGON((0 0,1 0,1 1,0 0)),POLYGON((1 2,3 4),(5 6,7 8)),MULTIPOLYGON(((1 2,3 4)),((5 6,7 8),(1 2,5 4))))",
+			expected: geo.Collection{
+				geo.Point{1, 2},
+				geo.LineString{{3, 4}, {5, 6}},
+				geo.MultiLineString{{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}},
+				geo.Polygon{{{0, 0}, {1, 0}, {1, 1}, {0, 0}}},
+				geo.Polygon{{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}},
+				geo.MultiPolygon{{{{1, 2}, {3, 4}}}, {{{5, 6}, {7, 8}}, {{1, 2}, {5, 4}}}},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			// you know it's a collection
+			c, err := UnmarshalCollection(tc.s)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !c.Equal(tc.expected) {
+				t.Log(c)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+
+			// lower case
+			c, err = UnmarshalCollection("  " + strings.ToLower(tc.s))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !c.Equal(tc.expected) {
+				t.Log(c)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+
+			// via generic unmarshal
+			geom, err := Unmarshal(tc.s)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			c = geom.(geo.Collection)
+
+			if !c.Equal(tc.expected) {
+				t.Log(c)
+				t.Log(tc.expected)
+				t.Errorf("incorrect wkt unmarshalling")
+			}
+		})
+	}
+}
+
+func TestUnmarshalCollection_errors(t *testing.T) {
+	cases := []struct {
+		name string
+		s    string
+		err  error
+	}{
+		{
+			name: "just name",
+			s:    "GEOMETRYCOLLECTION",
+			err:  ErrNotWKT,
+		},
+		{
+			name: "too many points",
+			s:    "GEOMETRYCOLLECTION(POINT(1 2 3))",
+			err:  ErrNotWKT,
+		},
+		{
+			name: "missing trailing paren",
+			s:    "GEOMETRYCOLLECTION(POINT(1 2 3)",
+			err:  ErrNotWKT,
+		},
+		{
+			name: "not a geometry collection",
+			s:    "POINT(1 2)",
+			err:  ErrIncorrectGeometry,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := UnmarshalCollection(tc.s); err != tc.err {
 				t.Fatalf("incorrect error: %e != %e", err, tc.err)
 			}
 		})
