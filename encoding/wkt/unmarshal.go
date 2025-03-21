@@ -11,11 +11,35 @@ import (
 )
 
 var (
-	ErrNotWKT            = errors.New("wkt: invalid data")       // returned when unmarshalling WKT and the data is not valid
-	ErrIncorrectGeometry = errors.New("wkt: incorrect geometry") // returned when unmarshalling WKT data into the wrong type
-	singleParen = regexp.MustCompile(`\)([\s|\t]*,[\s|\t]*)\(`)
-	doubleParen = regexp.MustCompile(`\)[\s|\t]*\)([\s|\t]*,[\s|\t]*)\([\s|\t]*\(`)
+	ErrNotWKT              = errors.New("wkt: invalid data")         // returned when unmarshalling WKT and the data is not valid
+	ErrIncorrectGeometry   = errors.New("wkt: incorrect geometry")   // returned when unmarshalling WKT data into the wrong type
+	ErrUnsupportedGeometry = errors.New("wkt: unsupported geometry") // returned when geometry type is not supported by this library
+	singleParen            = regexp.MustCompile(`\)([\s|\t]*,[\s|\t]*)\(`)
+	doubleParen            = regexp.MustCompile(`\)[\s|\t]*\)([\s|\t]*,[\s|\t]*)\([\s|\t]*\(`)
 )
+
+// Unmarshal returns a geometry by parsing the WKT string.
+func Unmarshal(s string) (geo.Geometry, error) {
+	s = trimSpace(s)
+	prefix := upperPrefix(s)
+	if bytes.HasPrefix(prefix, []byte("POINT")) {
+		return unmarshalPoint(s)
+	} else if bytes.HasPrefix(prefix, []byte("LINESTRING")) {
+		return unmarshalLineString(s)
+	} else if bytes.HasPrefix(prefix, []byte("POLYGON")) {
+		return unmarshalPolygon(s)
+	} else if bytes.HasPrefix(prefix, []byte("MULTIPOINT")) {
+		return unmarshalMultiPoint(s)
+	} else if bytes.HasPrefix(prefix, []byte("MULTILINESTRING")) {
+		return unmarshalMultiLineString(s)
+	} else if bytes.HasPrefix(prefix, []byte("MULTIPOLYGON")) {
+		return unmarshalMultiPolygon(s)
+	} else if bytes.HasPrefix(prefix, []byte("GEOMETRYCOLLECTION")) {
+		return unmarshalCollection(s)
+	} else {
+		return nil, ErrUnsupportedGeometry
+	}
+}
 
 // UnmarshalPoint returns the point represented by the wkt string.
 // Returns ErrIncorrectGeometry if the wkt is not a point.
@@ -87,6 +111,18 @@ func UnmarshalMultiPolygon(s string) (geo.MultiPolygon, error) {
 	}
 
 	return unmarshalMultiPolygon(s)
+}
+
+// UnmarshalCollection returns the geometry collection represented by the wkt string.
+// Returns ErrIncorrectGeometry if the wkt is not a geometry collection.
+func UnmarshalCollection(s string) (geo.Collection, error) {
+	s = trimSpace(s)
+	prefix := upperPrefix(s)
+	if !bytes.HasPrefix(prefix, []byte("GEOMETRYCOLLECTION")) {
+		return nil, ErrIncorrectGeometry
+	}
+
+	return unmarshalCollection(s)
 }
 
 func trimSpace(s string) string {
@@ -362,6 +398,37 @@ func unmarshalMultiPolygon(s string) (mpoly geo.MultiPolygon, err error) {
 	}
 
 	return mpoly, nil
+}
+
+func unmarshalCollection(s string) (geo.Collection, error) {
+	if strings.EqualFold(s, "GEOMETRYCOLLECTION EMPTY") {
+		return geo.Collection{}, nil
+	}
+
+	if len(s) == 18 { // just GEOMETRYCOLLECTION
+		return nil, ErrNotWKT
+	}
+
+	geometries := splitGeometryCollection(s[18:])
+	if len(geometries) == 0 {
+		return geo.Collection{}, nil
+	}
+
+	c := make(geo.Collection, 0, len(geometries))
+	for _, g := range geometries {
+		if len(g) == 0 {
+			continue
+		}
+
+		tg, err := Unmarshal(g)
+		if err != nil {
+			return nil, err
+		}
+
+		c = append(c, tg)
+	}
+
+	return c, nil
 }
 
 // parsePoint pases point by (x y).
