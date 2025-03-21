@@ -7,6 +7,20 @@ import (
 	"github.com/pchchv/geo"
 )
 
+// Marshal returns a WKT representation of the geometry.
+func Marshal(g geo.Geometry) []byte {
+	buf := bytes.NewBuffer(nil)
+	wkt(buf, g)
+	return buf.Bytes()
+}
+
+// MarshalString returns a WKT representation of the geometry as a string.
+func MarshalString(g geo.Geometry) string {
+	buf := bytes.NewBuffer(nil)
+	wkt(buf, g)
+	return buf.String()
+}
+
 func writeLineString(buf *bytes.Buffer, ls geo.LineString) {
 	buf.WriteByte('(')
 	for i, p := range ls {
