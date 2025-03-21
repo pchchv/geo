@@ -76,18 +76,22 @@ func (s *GeometryScanner) Scan(d interface{}) error {
 
 	s.Geometry = nil
 	s.Valid = false
-	if g, _, valid, err := wkbcommon.Scan(s.g, d); err == wkbcommon.ErrNotWKBHeader {
+
+	g, _, valid, err := wkbcommon.Scan(s.g, d)
+	if err == wkbcommon.ErrNotWKBHeader {
 		var e error
 		g, _, valid, e = wkbcommon.Scan(s.g, data[4:])
 		if e != wkbcommon.ErrNotWKBHeader {
 			err = e // nil or incorrect type, e.g. decoding line string
 		}
-	} else if err != nil {
-		return mapCommonError(err)
-	} else {
-		s.Geometry = g
-		s.Valid = valid
 	}
+
+	if err != nil {
+		return mapCommonError(err)
+	}
+
+	s.Geometry = g
+	s.Valid = valid
 
 	return nil
 }
@@ -103,5 +107,9 @@ func Value(g geo.Geometry) driver.Valuer {
 }
 
 func (v value) Value() (driver.Value, error) {
-	return Marshal(v.v)
+	val, err := Marshal(v.v)
+	if val == nil {
+		return nil, err
+	}
+	return val, err
 }

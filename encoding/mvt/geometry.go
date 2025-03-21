@@ -31,14 +31,16 @@ func newKeyValueEncoder() *keyValueEncoder {
 	}
 }
 
-func (kve *keyValueEncoder) Key(s string) (i uint32) {
-	if i, ok := kve.keyMap[s]; !ok {
-		i = uint32(len(kve.Keys))
-		kve.Keys = append(kve.Keys, s)
-		kve.keyMap[s] = i
+func (kve *keyValueEncoder) Key(s string) uint32 {
+	if i, ok := kve.keyMap[s]; ok {
+		return i
 	}
 
-	return
+	i := uint32(len(kve.Keys))
+	kve.Keys = append(kve.Keys, s)
+	kve.keyMap[s] = i
+
+	return i
 }
 
 func (kve *keyValueEncoder) Value(v interface{}) (uint32, error) {
@@ -114,46 +116,36 @@ func encodeValue(v interface{}) (*vectortile.Tile_Value, error) {
 	tv := &vectortile.Tile_Value{}
 	switch t := v.(type) {
 	case string:
-		tv.StringValue = &t
+		tv.Value = &vectortile.Tile_Value_StringValue{StringValue: t}
 	case fmt.Stringer:
 		s := t.String()
-		tv.StringValue = &s
+		tv.Value = &vectortile.Tile_Value_StringValue{StringValue: s}
 	case int:
-		i := int64(t)
-		tv.SintValue = &i
+		tv.Value = &vectortile.Tile_Value_FloatValue{FloatValue: float32(t)}
 	case int8:
-		i := int64(t)
-		tv.SintValue = &i
+		tv.Value = &vectortile.Tile_Value_FloatValue{FloatValue: float32(t)}
 	case int16:
-		i := int64(t)
-		tv.SintValue = &i
+		tv.Value = &vectortile.Tile_Value_FloatValue{FloatValue: float32(t)}
 	case int32:
-		i := int64(t)
-		tv.SintValue = &i
+		tv.Value = &vectortile.Tile_Value_FloatValue{FloatValue: float32(t)}
 	case int64:
-		i := int64(t)
-		tv.SintValue = &i
+		tv.Value = &vectortile.Tile_Value_FloatValue{FloatValue: float32(t)}
 	case uint:
-		i := uint64(t)
-		tv.UintValue = &i
+		tv.Value = &vectortile.Tile_Value_FloatValue{FloatValue: float32(t)}
 	case uint8:
-		i := uint64(t)
-		tv.UintValue = &i
+		tv.Value = &vectortile.Tile_Value_FloatValue{FloatValue: float32(t)}
 	case uint16:
-		i := uint64(t)
-		tv.UintValue = &i
+		tv.Value = &vectortile.Tile_Value_FloatValue{FloatValue: float32(t)}
 	case uint32:
-		i := uint64(t)
-		tv.UintValue = &i
+		tv.Value = &vectortile.Tile_Value_FloatValue{FloatValue: float32(t)}
 	case uint64:
-		i := uint64(t)
-		tv.UintValue = &i
+		tv.Value = &vectortile.Tile_Value_FloatValue{FloatValue: float32(t)}
 	case float32:
-		tv.FloatValue = &t
+		tv.Value = &vectortile.Tile_Value_FloatValue{FloatValue: float32(t)}
 	case float64:
-		tv.DoubleValue = &t
+		tv.Value = &vectortile.Tile_Value_DoubleValue{DoubleValue: t}
 	case bool:
-		tv.BoolValue = &t
+		tv.Value = &vectortile.Tile_Value_BoolValue{BoolValue: t}
 	default:
 		return nil, fmt.Errorf("unable to encode value of type %T: %v", v, v)
 	}
@@ -254,23 +246,26 @@ func unzigzag(v uint32) float64 {
 }
 
 func decodeValue(v *vectortile.Tile_Value) interface{} {
-	if v != nil {
-		if v.StringValue != nil {
-			return *v.StringValue
-		} else if v.FloatValue != nil {
-			return float64(*v.FloatValue)
-		} else if v.DoubleValue != nil {
-			return *v.DoubleValue
-		} else if v.IntValue != nil {
-			return float64(*v.IntValue)
-		} else if v.UintValue != nil {
-			return float64(*v.UintValue)
-		} else if v.SintValue != nil {
-			return float64(*v.SintValue)
-		} else if v.BoolValue != nil {
-			return *v.BoolValue
-		}
+	if v == nil || v.Value == nil {
+		return nil
 	}
 
-	return nil
+	switch value := v.Value.(type) {
+	case *vectortile.Tile_Value_StringValue:
+		return value.StringValue
+	case *vectortile.Tile_Value_FloatValue:
+		return float64(value.FloatValue)
+	case *vectortile.Tile_Value_DoubleValue:
+		return value.DoubleValue
+	case *vectortile.Tile_Value_IntValue:
+		return value.IntValue
+	case *vectortile.Tile_Value_UintValue:
+		return value.UintValue
+	case *vectortile.Tile_Value_SintValue:
+		return value.SintValue
+	case *vectortile.Tile_Value_BoolValue:
+		return value.BoolValue
+	default:
+		return nil
+	}
 }

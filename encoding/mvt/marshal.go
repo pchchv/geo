@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/encoding/mvt/vectortile"
@@ -25,13 +26,16 @@ func Marshal(layers Layers) ([]byte, error) {
 		v, e := l.Version, l.Extent
 		kve := newKeyValueEncoder()
 		layer := &vectortile.Tile_Layer{
-			Name:     &l.Name,
-			Version:  &v,
-			Extent:   &e,
+			Name:     l.Name,
+			Version:  v,
+			Extent:   e,
 			Features: make([]*vectortile.Tile_Feature, 0, len(l.Features)),
 		}
 
 		for _, f := range l.Features {
+			if f.ID == nil {
+				f.ID = f.Properties["id"]
+			}
 			if err := addFeature(layer, kve, f); err != nil {
 				return nil, err
 			}
@@ -68,7 +72,7 @@ func MarshalGzipped(layers Layers) ([]byte, error) {
 
 func convertIntID(i int) *uint64 {
 	if i < 0 {
-		return nil
+		i *= -1
 	}
 
 	v := uint64(i)
@@ -109,9 +113,18 @@ func convertID(id interface{}) *uint64 {
 	case float64:
 		return convertIntID(int(id))
 	case string:
-		if i, err := strconv.Atoi(id); err == nil {
-			return convertIntID(i)
+		i, err := strconv.Atoi(id)
+		if err != nil {
+			if idx := strings.Index(id, "."); idx != -1 {
+				i, err = strconv.Atoi(id[:idx])
+				if err != nil {
+					i = idx
+				}
+			} else {
+				i = idx
+			}
 		}
+		return convertIntID(i)
 	}
 
 	return nil
@@ -127,11 +140,12 @@ func encodeProperties(kve *keyValueEncoder, properties geojson.Properties) ([]ui
 
 	for _, k := range kve.keySortBuffer {
 		ki := kve.Key(k)
-		if vi, err := kve.Value(properties[k]); err != nil {
+		vi, err := kve.Value(properties[k])
+		if err != nil {
 			return nil, fmt.Errorf("property %s: %v", k, err)
-		} else {
-			tags = append(tags, ki, vi)
 		}
+
+		tags = append(tags, ki, vi)
 	}
 
 	return tags, nil
@@ -159,15 +173,29 @@ func addSingleGeometryFeature(layer *vectortile.Tile_Layer, kve *keyValueEncoder
 
 	tags, err := encodeProperties(kve, p)
 	if err != nil {
-		return fmt.Errorf("error encoding geometry: %v : %s", g, err.Error())
+		return fmt.Errorf("error encoding properties: %v : %s", p, err.Error())
 	}
 
-	layer.Features = append(layer.Features, &vectortile.Tile_Feature{
-		Id:       convertID(id),
+	convertedID := convertID(id)
+	if convertedID == nil {
+		return fmt.Errorf("convertID returned nil for id: %v:%T", id, id)
+	}
+
+	if layer == nil {
+		return fmt.Errorf("layer is nil")
+	}
+	if layer.Features == nil {
+		layer.Features = []*vectortile.Tile_Feature{}
+	}
+
+	feature := &vectortile.Tile_Feature{
+		Id:       *convertedID,
 		Tags:     tags,
-		Type:     &geomType,
+		Type:     geomType,
 		Geometry: encodedGeometry,
-	})
+	}
+
+	layer.Features = append(layer.Features, feature)
 
 	return nil
 }

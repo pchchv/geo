@@ -8,6 +8,7 @@ import (
 	"github.com/pchchv/geo"
 	"github.com/pchchv/geo/encoding/mvt/vectortile"
 	"github.com/pchchv/pbr"
+	"google.golang.org/protobuf/proto"
 )
 
 type stringer int
@@ -156,7 +157,7 @@ func sliceToIterator(vals []uint32) *pbr.Iterator {
 		Geometry: vals,
 	}
 
-	data, err := feature.Marshal()
+	data, err := proto.Marshal(feature)
 	if err != nil {
 		panic(err)
 	}

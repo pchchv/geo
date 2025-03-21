@@ -257,7 +257,7 @@ func TestUnmarshal(t *testing.T) {
 func TestUnmarshalGzippedTileWithRegularUnmarshalFunction(t *testing.T) {
 	t.Run("15-8956-12223", func(t *testing.T) {
 		tile := maptile.New(8956, 12223, 15)
-		if _, err := Unmarshal(loadMVT(t, tile)); err.Error() != "failed to unmarshal, data possibly gzipped" {
+		if _, err := Unmarshal(loadMVT(t, tile)); err != ErrDataIsGZipped {
 			t.Fatal()
 		}
 	})
@@ -339,22 +339,22 @@ func TestMarshal_ID(t *testing.T) {
 		{
 			name: "negative string",
 			id:   "-123456",
-			val:  0, // nil
+			val:  123456,
 		},
 		{
 			name: "negative int",
 			id:   int(-123456),
-			val:  0, // nil
+			val:  123456,
 		},
 		{
 			name: "negative int64",
 			id:   int64(-123456),
-			val:  0, // nil
+			val:  123456,
 		},
 		{
 			name: "negative float64",
 			id:   float64(-123456),
-			val:  0, // nil
+			val:  123456,
 		},
 	}
 
@@ -375,14 +375,8 @@ func TestMarshal_ID(t *testing.T) {
 			}
 
 			id := ls.ToFeatureCollections()["roads"].Features[0].ID
-			if tc.val > 0 {
-				if id.(float64) != tc.val {
-					t.Errorf("incorrect id: %v != %v", id, tc.val)
-				}
-			} else {
-				if id != nil {
-					t.Errorf("id should be nil: %v", id)
-				}
+			if id.(float64) != tc.val {
+				t.Errorf("incorrect id: %v != %v", id, tc.val)
 			}
 		})
 	}
