@@ -851,3 +851,84 @@ func loadJSON(tb testing.TB, filename string, obj interface{}) {
 		tb.Fatalf("unmarshal error: %e", err)
 	}
 }
+
+func BenchmarkUnmarshalPoint(b *testing.B) {
+	var mp geo.MultiPolygon
+	loadJSON(b, "testdata/polygon.json", &mp)
+
+	text := MarshalString(geo.Point{-81.60644531, 41.51377887})
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := Unmarshal(text); err != nil {
+			b.Fatalf("unexpected error: %e", err)
+		}
+	}
+}
+
+func BenchmarkUnmarshalLineString_small(b *testing.B) {
+	ls := geo.LineString{{1, 2}, {3, 4}}
+	text := MarshalString(ls)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := Unmarshal(text); err != nil {
+			b.Fatalf("unexpected error: %e", err)
+		}
+	}
+}
+
+func BenchmarkUnmarshalLineString(b *testing.B) {
+	var mp geo.MultiPolygon
+	loadJSON(b, "testdata/polygon.json", &mp)
+
+	text := MarshalString(geo.LineString(mp[0][0]))
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := Unmarshal(text); err != nil {
+			b.Fatalf("unexpected error: %e", err)
+		}
+	}
+}
+
+func BenchmarkUnmarshalPolygon(b *testing.B) {
+	var mp geo.MultiPolygon
+	loadJSON(b, "testdata/polygon.json", &mp)
+
+	text := MarshalString(mp[0])
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := Unmarshal(text); err != nil {
+			b.Fatalf("unexpected error: %e", err)
+		}
+	}
+}
+
+func BenchmarkUnmarshalMultiPolygon_small(b *testing.B) {
+	mp := geo.MultiPolygon{{{{1, 2}, {3, 4}}}, {{{5, 6}, {7, 8}}, {{1, 2}, {5, 4}}}}
+
+	text := MarshalString(mp)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := Unmarshal(text); err != nil {
+			b.Fatalf("unexpected error: %e", err)
+		}
+	}
+}
+
+func BenchmarkUnmarshalMultiPolygon(b *testing.B) {
+	var mp geo.MultiPolygon
+	loadJSON(b, "testdata/polygon.json", &mp)
+
+	text := MarshalString(mp)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := Unmarshal(text); err != nil {
+			b.Fatalf("unexpected error: %e", err)
+		}
+	}
+}
