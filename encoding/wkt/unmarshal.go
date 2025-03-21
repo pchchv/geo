@@ -13,6 +13,7 @@ import (
 var (
 	ErrNotWKT            = errors.New("wkt: invalid data")       // returned when unmarshalling WKT and the data is not valid
 	ErrIncorrectGeometry = errors.New("wkt: incorrect geometry") // returned when unmarshalling WKT data into the wrong type
+	singleParen = regexp.MustCompile(`\)([\s|\t]*,[\s|\t]*)\(`)
 )
 
 // UnmarshalPoint returns the point represented by the wkt string.
@@ -145,6 +146,76 @@ func unmarshalMultiPoint(s string) (geo.MultiPoint, error) {
 	}
 
 	return mp, nil
+}
+
+func unmarshalLineString(s string) (geo.LineString, error) {
+	if strings.EqualFold(s, "LINESTRING EMPTY") {
+		return geo.LineString{}, nil
+	}
+
+	s, err := trimSpaceBrackets(s[10:])
+	if err != nil {
+		return nil, err
+	}
+
+	count := strings.Count(s, ",")
+	ls := make(geo.LineString, 0, count+1)
+	if err = splitOnComma(s, func(p string) error {
+		tp, err := parsePoint(p)
+		if err != nil {
+			return err
+		}
+
+		ls = append(ls, tp)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return ls, nil
+}
+
+func unmarshalMultiLineString(s string) (geo.MultiLineString, error) {
+	if strings.EqualFold(s, "MULTILINESTRING EMPTY") {
+		return geo.MultiLineString{}, nil
+	}
+
+	s, err := trimSpaceBrackets(s[15:])
+	if err != nil {
+		return nil, err
+	}
+
+	var tmls geo.MultiLineString
+	if err = splitByRegexpYield(s, singleParen, func(i int) {
+		tmls = make(geo.MultiLineString, 0, i)
+	},
+		func(ls string) (err error) {
+			if ls, err = trimSpaceBrackets(ls); err != nil {
+				return
+			}
+
+			count := strings.Count(ls, ",")
+			tls := make(geo.LineString, 0, count+1)
+			if err = splitOnComma(ls, func(p string) error {
+				tp, err := parsePoint(p)
+				if err != nil {
+					return err
+				}
+
+				tls = append(tls, tp)
+				return nil
+			}); err != nil {
+				return
+			}
+
+			tmls = append(tmls, tls)
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+
+	return tmls, nil
 }
 
 // parsePoint pases point by (x y).
