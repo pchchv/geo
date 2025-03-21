@@ -6,6 +6,134 @@ import (
 	"testing"
 )
 
+func TestUnmarshalPoint_errors(t *testing.T) {
+	cases := []struct {
+		name string
+		s    string
+		err  error
+	}{
+		{
+			name: "just name",
+			s:    "POINT",
+			err:  ErrNotWKT,
+		},
+		{
+			name: "too many points",
+			s:    "POINT(1.34 2.35 3.36)",
+			err:  ErrNotWKT,
+		},
+		{
+			name: "not a point",
+			s:    "MULTIPOINT((1.34 2.35))",
+			err:  ErrIncorrectGeometry,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := UnmarshalPoint(tc.s); err != tc.err {
+				t.Fatalf("incorrect error: %e != %e", err, tc.err)
+			}
+		})
+	}
+}
+
+func TestUnmarshalMultiPoint_errors(t *testing.T) {
+	cases := []struct {
+		name string
+		s    string
+		err  error
+	}{
+		{
+			name: "just name",
+			s:    "MULTIPOINT",
+			err:  ErrNotWKT,
+		},
+		{
+			name: "too many points",
+			s:    "MULTIPOINT((1 2),(3 4 5))",
+			err:  ErrNotWKT,
+		},
+		{
+			name: "not a multipoint",
+			s:    "POINT(1 2)",
+			err:  ErrIncorrectGeometry,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := UnmarshalMultiPoint(tc.s); err != tc.err {
+				t.Fatalf("incorrect error: %e != %e", err, tc.err)
+			}
+		})
+	}
+}
+
+func TestUnmarshalLineString_errors(t *testing.T) {
+	cases := []struct {
+		name string
+		s    string
+		err  error
+	}{
+		{
+			name: "just name",
+			s:    "LINESTRING",
+			err:  ErrNotWKT,
+		},
+		{
+			name: "too many points",
+			s:    "LINESTRING(1 2,3 4 5)",
+			err:  ErrNotWKT,
+		},
+		{
+			name: "not a multipoint",
+			s:    "POINT(1 2)",
+			err:  ErrIncorrectGeometry,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := UnmarshalLineString(tc.s); err != tc.err {
+				t.Fatalf("incorrect error: %e != %e", err, tc.err)
+			}
+		})
+	}
+}
+
+func TestUnmarshalMultiLineString_errors(t *testing.T) {
+	cases := []struct {
+		name string
+		s    string
+		err  error
+	}{
+		{
+			name: "just name",
+			s:    "MULTILINESTRING",
+			err:  ErrNotWKT,
+		},
+		{
+			name: "too many points",
+			s:    "MULTILINESTRING((1 2,3 4 5))",
+			err:  ErrNotWKT,
+		},
+		{
+			name: "not a multi linestring",
+			s:    "POINT(1 2)",
+			err:  ErrIncorrectGeometry,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := UnmarshalMultiLineString(tc.s); err != tc.err {
+				t.Fatalf("incorrect error: %e != %e", err, tc.err)
+			}
+		})
+	}
+}
+
 func TestTrimSpaceBrackets(t *testing.T) {
 	cases := []struct {
 		name     string
