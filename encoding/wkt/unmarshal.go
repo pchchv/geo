@@ -14,6 +14,7 @@ var (
 	ErrNotWKT            = errors.New("wkt: invalid data")       // returned when unmarshalling WKT and the data is not valid
 	ErrIncorrectGeometry = errors.New("wkt: incorrect geometry") // returned when unmarshalling WKT data into the wrong type
 	singleParen = regexp.MustCompile(`\)([\s|\t]*,[\s|\t]*)\(`)
+	doubleParen = regexp.MustCompile(`\)[\s|\t]*\)([\s|\t]*,[\s|\t]*)\([\s|\t]*\(`)
 )
 
 // UnmarshalPoint returns the point represented by the wkt string.
@@ -240,6 +241,103 @@ func unmarshalMultiLineString(s string) (geo.MultiLineString, error) {
 	}
 
 	return tmls, nil
+}
+
+func unmarshalPolygon(s string) (poly geo.Polygon, err error) {
+	if strings.EqualFold(s, "POLYGON EMPTY") {
+		return geo.Polygon{}, nil
+	}
+
+	if s, err = trimSpaceBrackets(s[7:]); err != nil {
+		return nil, err
+	}
+
+	if err = splitByRegexpYield(s, singleParen, func(i int) {
+		poly = make(geo.Polygon, 0, i)
+	},
+		func(r string) (err error) {
+			if r, err = trimSpaceBrackets(r); err != nil {
+				return err
+			}
+
+			count := strings.Count(r, ",")
+			ring := make(geo.Ring, 0, count+1)
+			if err = splitOnComma(r, func(p string) error {
+				tp, err := parsePoint(p)
+				if err != nil {
+					return err
+				}
+
+				ring = append(ring, tp)
+				return nil
+			}); err != nil {
+				return
+			}
+
+			poly = append(poly, ring)
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+
+	return poly, nil
+}
+
+func unmarshalMultiPolygon(s string) (mpoly geo.MultiPolygon, err error) {
+	if strings.EqualFold(s, "MULTIPOLYGON EMPTY") {
+		return geo.MultiPolygon{}, nil
+	}
+
+	if s, err = trimSpaceBrackets(s[12:]); err != nil {
+		return nil, err
+	}
+
+	if err = splitByRegexpYield(s, doubleParen, func(i int) {
+		mpoly = make(geo.MultiPolygon, 0, i)
+	},
+		func(poly string) (err error) {
+			if poly, err = trimSpaceBrackets(poly); err != nil {
+				return
+			}
+
+			var tpoly geo.Polygon
+			if err = splitByRegexpYield(poly, singleParen, func(i int) {
+				tpoly = make(geo.Polygon, 0, i)
+			},
+				func(r string) (err error) {
+					if r, err = trimSpaceBrackets(r); err != nil {
+						return
+					}
+
+					count := strings.Count(r, ",")
+					tr := make(geo.Ring, 0, count+1)
+					if err = splitOnComma(r, func(s string) (err error) {
+						if tp, err := parsePoint(s); err != nil {
+							return err
+						} else {
+							tr = append(tr, tp)
+							return nil
+						}
+					}); err != nil {
+						return
+					}
+
+					tpoly = append(tpoly, tr)
+					return nil
+				},
+			); err != nil {
+				return
+			}
+
+			mpoly = append(mpoly, tpoly)
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+
+	return mpoly, nil
 }
 
 // parsePoint pases point by (x y).
