@@ -1,6 +1,7 @@
 package wkt
 
 import (
+	"bytes"
 	"errors"
 	"strconv"
 	"strings"
@@ -8,7 +9,34 @@ import (
 	"github.com/pchchv/geo"
 )
 
-var ErrNotWKT = errors.New("wkt: invalid data") // returned when unmarshalling WKT and the data is not valid
+var (
+	ErrNotWKT            = errors.New("wkt: invalid data")       // returned when unmarshalling WKT and the data is not valid
+	ErrIncorrectGeometry = errors.New("wkt: incorrect geometry") // returned when unmarshalling WKT data into the wrong type
+)
+
+// UnmarshalPoint returns the point represented by the wkt string.
+// Return ErrIncorrectGeometry if the wkt is not a point.
+func UnmarshalPoint(s string) (geo.Point, error) {
+	s = trimSpace(s)
+	prefix := upperPrefix(s)
+	if !bytes.HasPrefix(prefix, []byte("POINT")) {
+		return geo.Point{}, ErrIncorrectGeometry
+	}
+
+	return unmarshalPoint(s)
+}
+
+// UnmarshalMultiPoint returns the multi-point represented by the wkt string.
+// Return ErrIncorrectGeometry if the wkt is not a multi-point.
+func UnmarshalMultiPoint(s string) (geo.MultiPoint, error) {
+	s = trimSpace(s)
+	prefix := upperPrefix(s)
+	if !bytes.HasPrefix(prefix, []byte("MULTIPOINT")) {
+		return nil, ErrIncorrectGeometry
+	}
+
+	return unmarshalMultiPoint(s)
+}
 
 func trimSpace(s string) string {
 	if len(s) == 0 {
