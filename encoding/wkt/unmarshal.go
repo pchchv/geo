@@ -17,7 +17,7 @@ var (
 )
 
 // UnmarshalPoint returns the point represented by the wkt string.
-// Return ErrIncorrectGeometry if the wkt is not a point.
+// Returns ErrIncorrectGeometry if the wkt is not a point.
 func UnmarshalPoint(s string) (geo.Point, error) {
 	s = trimSpace(s)
 	prefix := upperPrefix(s)
@@ -29,7 +29,7 @@ func UnmarshalPoint(s string) (geo.Point, error) {
 }
 
 // UnmarshalMultiPoint returns the multi-point represented by the wkt string.
-// Return ErrIncorrectGeometry if the wkt is not a multi-point.
+// Returns ErrIncorrectGeometry if the wkt is not a multi-point.
 func UnmarshalMultiPoint(s string) (geo.MultiPoint, error) {
 	s = trimSpace(s)
 	prefix := upperPrefix(s)
@@ -38,6 +38,30 @@ func UnmarshalMultiPoint(s string) (geo.MultiPoint, error) {
 	}
 
 	return unmarshalMultiPoint(s)
+}
+
+// UnmarshalLineString returns the linestring represented by the wkt string.
+// Returns ErrIncorrectGeometry if the wkt is not a linestring.
+func UnmarshalLineString(s string) (geo.LineString, error) {
+	s = trimSpace(s)
+	prefix := upperPrefix(s)
+	if !bytes.HasPrefix(prefix, []byte("LINESTRING")) {
+		return nil, ErrIncorrectGeometry
+	}
+
+	return unmarshalLineString(s)
+}
+
+// UnmarshalMultiLineString returns the multi-linestring represented by the wkt string.
+// Returns ErrIncorrectGeometry if the wkt is not a multi-linestring.
+func UnmarshalMultiLineString(s string) (geo.MultiLineString, error) {
+	s = trimSpace(s)
+	prefix := upperPrefix(s)
+	if !bytes.HasPrefix(prefix, []byte("MULTILINESTRING")) {
+		return nil, ErrIncorrectGeometry
+	}
+
+	return unmarshalMultiLineString(s)
 }
 
 func trimSpace(s string) string {
