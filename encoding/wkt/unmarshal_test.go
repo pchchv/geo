@@ -2,6 +2,7 @@ package wkt
 
 import (
 	"encoding/json"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -837,5 +838,16 @@ func TestSplitOnComma(t *testing.T) {
 			}
 
 		})
+	}
+}
+
+func loadJSON(tb testing.TB, filename string, obj interface{}) {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		tb.Fatalf("failed to load mvt file: %e", err)
+	}
+
+	if err = json.Unmarshal(data, obj); err != nil {
+		tb.Fatalf("unmarshal error: %e", err)
 	}
 }
