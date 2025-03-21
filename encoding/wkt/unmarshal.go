@@ -3,6 +3,7 @@ package wkt
 import (
 	"bytes"
 	"errors"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -213,4 +214,52 @@ func splitOnComma(s string, yield func(s string) error) error {
 	}
 
 	return yield(s[at:])
+}
+
+// splitByRegexpYield splits the input by the regexp.
+// The first callback can be used to initialize an array with the size of the result,
+// the second is the callback with the matches.
+// An yield function is uised because it was faster/used less memory than allocating an array of the results.
+func splitByRegexpYield(s string, re *regexp.Regexp, set func(int), yield func(string) error) error {
+	indexes := re.FindAllStringSubmatchIndex(s, -1)
+	set(len(indexes) + 1)
+	var start int
+	for _, element := range indexes {
+		if err := yield(s[start:element[2]]); err != nil {
+			return err
+		}
+
+		start = element[3]
+	}
+
+	return yield(s[start:])
+}
+
+// splitGeometryCollection split GEOMETRYCOLLECTION to more geometry.
+func splitGeometryCollection(s string) (r []string) {
+	stack := make([]rune, 0)
+	r = make([]string, 0)
+	l := len(s)
+	for i, v := range s {
+		if !strings.Contains(string(stack), "(") {
+			stack = append(stack, v)
+			continue
+		}
+
+		if ('A' <= v && v < 'Z') || ('a' <= v && v < 'z') {
+			t := string(stack)
+			r = append(r, t[:len(t)-1])
+			stack = make([]rune, 0)
+			stack = append(stack, v)
+			continue
+		}
+
+		if i == l-1 {
+			r = append(r, string(stack))
+			continue
+		}
+
+		stack = append(stack, v)
+	}
+	return
 }
