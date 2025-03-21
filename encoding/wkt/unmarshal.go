@@ -65,6 +65,30 @@ func UnmarshalMultiLineString(s string) (geo.MultiLineString, error) {
 	return unmarshalMultiLineString(s)
 }
 
+// UnmarshalPolygon returns the polygon represented by the wkt string.
+// Returns ErrIncorrectGeometry if the wkt is not a polygon.
+func UnmarshalPolygon(s string) (geo.Polygon, error) {
+	s = trimSpace(s)
+	prefix := upperPrefix(s)
+	if !bytes.HasPrefix(prefix, []byte("POLYGON")) {
+		return nil, ErrIncorrectGeometry
+	}
+
+	return unmarshalPolygon(s)
+}
+
+// UnmarshalMultiPolygon returns the multi-polygon represented by the wkt string.
+// Returns ErrIncorrectGeometry if the wkt is not a multi-polygon.
+func UnmarshalMultiPolygon(s string) (geo.MultiPolygon, error) {
+	s = trimSpace(s)
+	prefix := upperPrefix(s)
+	if !bytes.HasPrefix(prefix, []byte("MULTIPOLYGON")) {
+		return nil, ErrIncorrectGeometry
+	}
+
+	return unmarshalMultiPolygon(s)
+}
+
 func trimSpace(s string) string {
 	if len(s) == 0 {
 		return s
