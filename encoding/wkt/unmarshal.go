@@ -1,6 +1,12 @@
 package wkt
 
-import "errors"
+import (
+	"errors"
+	"strconv"
+	"strings"
+
+	"github.com/pchchv/geo"
+)
 
 var ErrNotWKT = errors.New("wkt: invalid data") // returned when unmarshalling WKT and the data is not valid
 
@@ -50,4 +56,52 @@ func trimSpaceBrackets(s string) (string, error) {
 	}
 
 	return trimSpace(s), nil
+}
+
+// upperPrefix gets the ToUpper case of the first 20 chars.
+func upperPrefix(s string) []byte {
+	prefix := make([]byte, 20)
+	for i := 0; i < 20 && i < len(s); i++ {
+		if 'a' <= s[i] && s[i] <= 'z' {
+			prefix[i] = s[i] - ('a' - 'A')
+		} else {
+			prefix[i] = s[i]
+		}
+	}
+
+	return prefix
+}
+
+func unmarshalPoint(s string) (geo.Point, error) {
+	s, err := trimSpaceBrackets(s[5:])
+	if err != nil {
+		return geo.Point{}, err
+	}
+
+	tp, err := parsePoint(s)
+	if err != nil {
+		return geo.Point{}, err
+	}
+
+	return tp, nil
+}
+
+// parsePoint pases point by (x y).
+func parsePoint(s string) (p geo.Point, err error) {
+	one, two, ok := strings.Cut(s, " ")
+	if !ok {
+		return geo.Point{}, ErrNotWKT
+	}
+
+	x, err := strconv.ParseFloat(one, 64)
+	if err != nil {
+		return geo.Point{}, ErrNotWKT
+	}
+
+	y, err := strconv.ParseFloat(two, 64)
+	if err != nil {
+		return geo.Point{}, ErrNotWKT
+	}
+
+	return geo.Point{x, y}, nil
 }
