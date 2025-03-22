@@ -46,7 +46,6 @@ func Clone(g Geometry) Geometry {
 		return g.Clone()
 	case Bound:
 		return g
-	default:
-		panic(fmt.Sprintf("geometry type not supported: %T", g))
 	}
+	panic(fmt.Sprintf("geometry type not supported: %T", g))
 }

@@ -87,9 +87,10 @@ func Round(g Geometry, factor ...int) Geometry {
 				math.Round(g.Max[1]*f) / f,
 			},
 		}
+	default:
+		panic(fmt.Sprintf("geometry type not supported: %T", g))
 	}
 
-	panic(fmt.Sprintf("geometry type not supported: %T", g))
 }
 
 func roundPoints(ps []Point, f float64) {

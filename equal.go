@@ -43,7 +43,7 @@ func Equal(g1, g2 Geometry) bool {
 		} else {
 			return g1.Equal(g2)
 		}
+	default:
+		panic(fmt.Sprintf("geometry type not supported: %T", g1))
 	}
-
-	panic(fmt.Sprintf("geometry type not supported: %T", g1))
 }
